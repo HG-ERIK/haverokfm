@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Add viewport-fit=cover so safe-area insets work on iOS devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Internet Radio</title>
+  <style>
+    /*----------------------------------------*/
+    /* 1) Prevent all scrolling/overflow       */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;           /* no scrolling at all */
+      touch-action: none;         /* disable any touch‐drag/scroll */
+      background-color: #311B0B;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      box-sizing: border-box;
+    }
+
+    /*----------------------------------------*/
+    /* 2) Blurred background image            */
+    #bg-blur {
+      position: absolute;
+      inset: 0;                    /* top:0; right:0; bottom:0; left:0 */
+      width: 100%;
+      height: 100%;
+      object-fit: cover;           /* cover the entire viewport */
+      object-position: center;
+      filter: blur(25px) brightness(0.7);
+      pointer-events: none;
+      z-index: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    /*----------------------------------------*/
+    /* 3) Header + Safe‐Area Handling         */
+    #header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;                /* room for status bar + icons */
+      pointer-events: none;
+      z-index: 2;
+    }
+    #logo {
+      position: absolute;
+      top: calc(16px + env(safe-area-inset-top));
+      left: calc(16px + env(safe-area-inset-left));
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      pointer-events: auto;
+      user-select: none;
+      color: #fff;
+    }
+    #menu-btn {
+      position: absolute;
+      top: calc(16px + env(safe-area-inset-top));
+      right: calc(64px + env(safe-area-inset-right));
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      outline: none;
+      pointer-events: auto;
+      user-select: none;
+    }
+    #stats-btn {
+      position: absolute;
+      top: calc(16px + env(safe-area-inset-top));
+      right: calc(16px + env(safe-area-inset-right));
+      font-size: 1.2rem;
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      outline: none;
+      pointer-events: auto;
+      user-select: none;
+      padding: 4px;
+    }
+
+    /*----------------------------------------*/
+    /* 4) Menu Popup (below the button)       */
+    #menu-popup {
+      display: none;
+      position: absolute;
+      top: calc(56px + env(safe-area-inset-top));
+      right: calc(64px + env(safe-area-inset-right));
+      min-width: 180px;
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      padding: 12px 16px;
+      font-size: 1rem;
+      color: #222;
+      max-width: calc(100vw - 32px);
+      z-index: 1000;
+      animation: fadeIn 0.2s ease-out;
+    }
+    #menu-popup.active {
+      display: block;
+    }
+    #menu-popup h3 {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    /*----------------------------------------*/
+    /* 5) Stats Panel (nerdy stats)           */
+    #stats-panel {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 350px;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 2000;
+      overflow-y: auto;
+      transition: right 0.3s ease;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      backdrop-filter: blur(10px);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #stats-panel.active {
+      right: 0;
+    }
+    #stats-panel h2 {
+      margin: 0 0 20px;
+      font-size: 1.2rem;
+      color: #00ff00;
+      text-align: center;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
+    .stat-group {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .stat-group h3 {
+      margin: 0 0 10px;
+      color: #ffff00;
+      font-size: 1rem;
+    }
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+      padding: 2px 0;
+    }
+    .stat-label {
+      color: #ccc;
+      flex: 1;
+    }
+    .stat-value {
+      color: #00ff88;
+      font-weight: bold;
+      text-align: right;
+      flex: 1;
+    }
+    .stat-value.warning {
+      color: #ffaa00;
+    }
+    .stat-value.error {
+      color: #ff4444;
+    }
+    #close-stats {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #close-stats:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /*----------------------------------------*/
+    /* 6) Main content (centered, below header) */
+    #main-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: calc(56px + env(safe-area-inset-top));
+      padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* More space for controls */
+      box-sizing: border-box;
+      text-align: center;
+      z-index: 1;
+    }
+
+    /* COVER CARD */
+    #cover-card {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
+      display: inline-flex;
+      flex-direction: row;        /* default: side‐by‐side */
+      align-items: center;
+      gap: 20px;
+      max-width: calc(90vw - 32px);
+      box-sizing: border-box;
+    }
+    #album-cover {
+      width: clamp(160px, 30vw, 280px);
+      height: clamp(160px, 30vw, 280px);
+      background: #333;
+      border-radius: 12px;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+      object-fit: cover;
+      object-position: center;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font-size: 3rem;
+      border: 3px solid #fff;
+      overflow: hidden;
+      position: relative;
+    }
+    #album-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #album-cover img.visible {
+      opacity: 1;
+    }
+    #details {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: #fff;
+      text-align: left;
+    }
+    #song-title {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      margin: 0 0 8px;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+    }
+    #song-artist {
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      font-weight: 400;
+      margin: 0;
+      opacity: 0.9;
+    }
+
+    /* Status indicator */
+    #status-indicator {
+      position: absolute;
+      top: calc(70px + env(safe-area-inset-top));
+      right: calc(16px + env(safe-area-inset-right));
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #status-indicator.show {
+      opacity: 1;
+    }
+    #status-indicator.buffering {
+      background: rgba(255, 165, 0, 0.8);
+      color: #000;
+    }
+    #status-indicator.error {
+      background: rgba(255, 0, 0, 0.8);
+    }
+    #status-indicator.reconnecting {
+      background: rgba(0, 150, 255, 0.8);
+    }
+
+    /*----------------------------------------*/
+    /* 7) Bottom controls                     */
+    #controls {
+      position: absolute;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 32px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-sizing: border-box;
+      max-width: calc(100vw - 32px);
+      z-index: 10;
+    }
+    #play-btn {
+      width: clamp(40px, 8vw, 50px);
+      height: clamp(40px, 8vw, 50px);
+      background: #fff;
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      transition: background 0.2s;
+      padding: 0;
+      flex-shrink: 0;
+    }
+    #play-btn:hover {
+      background: #eee;
+    }
+    #play-btn svg {
+      width: clamp(18px, 4vw, 24px);
+      height: clamp(18px, 4vw, 24px);
+      fill: #311B0B;
+    }
+    #volume-slider {
+      -webkit-appearance: none;
+      width: clamp(80px, 20vw, 180px);
+      height: 4px;
+      background: #fff;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+      flex-shrink: 1;
+    }
+    #volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #311B0B;
+      cursor: pointer;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+    }
+    #volume-slider::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #311B0B;
+      cursor: pointer;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    /*----------------------------------------*/
+    /* 8) Portrait/mobile corrections          */
+    @media only screen and (max-width: 600px) and (orientation: portrait) {
+      /* Stack cover + details vertically */
+      #cover-card {
+        flex-direction: column;
+        align-items: center;
+      }
+      #details {
+        text-align: center;
+        margin-top: 12px;
+      }
+      /* Tweak controls if desired */
+      #controls {
+        gap: 12px;
+        padding: 8px 16px;
+      }
+      #volume-slider {
+        width: 120px;
+      }
+      #stats-panel {
+        width: 100vw;
+        right: -100vw;
+        padding: 15px;
+      }
+      #stats-panel h2 {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+      }
+      .stat-group {
+        margin-bottom: 15px;
+        padding: 8px;
+      }
+      .stat-item {
+        margin: 3px 0;
+        font-size: 0.8rem;
+      }
+    }
+
+    /* IMPROVED LANDSCAPE MODE FOR PHONES */
+    @media only screen and (max-width: 900px) and (orientation: landscape) {
+      /* Smaller album cover to prevent crushing */
+      #album-cover {
+        width: clamp(80px, 15vw, 120px) !important;
+        height: clamp(80px, 15vw, 120px) !important;
+      }
+      
+      /* Adjust cover card for better spacing */
+      #cover-card {
+        max-width: calc(100vw - 64px);
+        padding: 12px 16px;
+        gap: 16px;
+      }
+      
+      /* Smaller text for landscape */
+      #song-title {
+        font-size: clamp(1.2rem, 3vw, 1.6rem);
+        margin: 0 0 4px;
+      }
+      #song-artist {
+        font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+      }
+      
+      /* Adjust main content padding */
+      #main-content {
+        padding-top: calc(56px + env(safe-area-inset-top));
+        padding-bottom: calc(70px + env(safe-area-inset-bottom));
+      }
+      
+      /* Compact controls for landscape */
+      #controls {
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        gap: 10px;
+        padding: 6px 12px;
+      }
+      #play-btn {
+        width: 40px;
+        height: 40px;
+      }
+      #play-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      #volume-slider {
+        width: clamp(60px, 15vw, 100px);
+      }
+      
+      /* MUCH SMALLER STATS PANEL FOR LANDSCAPE */
+      #stats-panel {
+        width: 280px;
+        right: -280px;
+        padding: 12px;
+        font-size: 0.75rem;
+      }
+      #stats-panel h2 {
+        font-size: 1rem;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+      }
+      .stat-group {
+        margin-bottom: 12px;
+        padding: 6px 8px;
+      }
+      .stat-group h3 {
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+      }
+      .stat-item {
+        margin: 2px 0;
+        font-size: 0.75rem;
+      }
+      .stat-label {
+        font-size: 0.7rem;
+      }
+      .stat-value {
+        font-size: 0.75rem;
+      }
+      #close-stats {
+        width: 25px;
+        height: 25px;
+        font-size: 1.2rem;
+        top: 10px;
+        right: 10px;
+      }
+      
+      /* Make stats panel semi-transparent so content shows through */
+      #stats-panel.active {
+        background: rgba(0, 0, 0, 0.85);
+      }
+    }
+
+    /* Extra small landscape phones (like when Galaxy Fold is closed) */
+    @media only screen and (max-width: 600px) and (orientation: landscape) and (max-height: 400px) {
+      #album-cover {
+        width: 70px !important;
+        height: 70px !important;
+        font-size: 2rem;
+      }
+      #cover-card {
+        padding: 8px 12px;
+        gap: 12px;
+      }
+      #song-title {
+        font-size: 1rem;
+      }
+      #song-artist {
+        font-size: 0.8rem;
+      }
+      #controls {
+        padding: 4px 8px;
+        gap: 8px;
+      }
+      #play-btn {
+        width: 36px;
+        height: 36px;
+      }
+      #volume-slider {
+        width: 60px;
+      }
+      
+      /* TINY STATS PANEL FOR VERY SMALL LANDSCAPE */
+      #stats-panel {
+        width: 240px;
+        right: -240px;
+        padding: 8px;
+        font-size: 0.7rem;
+      }
+      #stats-panel h2 {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+      }
+      .stat-group {
+        margin-bottom: 8px;
+        padding: 4px 6px;
+      }
+      .stat-group h3 {
+        font-size: 0.8rem;
+        margin-bottom: 4px;
+      }
+      .stat-item {
+        margin: 1px 0;
+        font-size: 0.65rem;
+      }
+      .stat-label {
+        font-size: 0.6rem;
+      }
+      .stat-value {
+        font-size: 0.65rem;
+      }
+      #close-stats {
+        width: 20px;
+        height: 20px;
+        font-size: 1rem;
+        top: 5px;
+        right: 5px;
+      }
+    }
+
+    /* Fade-in animation for menu popup */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- 1) Blurred background -->
+  <img id="bg-blur" src="" alt="Background Cover">
+
+  <!-- 2) Header: logo (left) + menu button + stats button (right) -->
+  <div id="header">
+    <div id="logo">Levél+</div>
+    <button id="menu-btn" aria-label="Open menu">&#9776;</button>
+    <button id="stats-btn" aria-label="Show stats">📊</button>
+    <div id="menu-popup">
+      <h3>About</h3>
+      <p>This is an internet radio player demo.<br>Made by Erik.</p>
+    </div>
+  </div>
+
+  <!-- Stats Panel -->
+  <div id="stats-panel">
+    <button id="close-stats">×</button>
+    <h2>📊 NERDY STATS</h2>
+    
+    <div class="stat-group">
+      <h3>🎵 Stream Stats</h3>
+      <div class="stat-item">
+        <span class="stat-label">Codec:</span>
+        <span class="stat-value" id="stream-codec">Loading...</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Bitrate:</span>
+        <span class="stat-value" id="stream-bitrate">Loading...</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Download Speed:</span>
+        <span class="stat-value" id="download-speed">Loading...</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Buffer Length:</span>
+        <span class="stat-value" id="buffer-length">Loading...</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Buffer Health:</span>
+        <span class="stat-value" id="buffer-health">Loading...</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Estimated Latency:</span>
+        <span class="stat-value" id="estimated-latency">Loading...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status indicator -->
+  <div id="status-indicator"></div>
+
+  <!-- 3) Main content (centered, pushed below header) -->
+  <div id="main-content">
+    <div id="cover-card">
+      <div id="album-cover">📻</div>
+      <div id="details">
+        <div id="song-title"><b>Nincs duma (Csak zene)</b></div>
+        <div id="song-artist">Levél+</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4) Bottom controls (play/pause + volume) -->
+  <div id="controls">
+    <button id="play-btn" aria-label="Play/Pause">
+      <svg id="play-icon" viewBox="0 0 64 64">
+        <polygon points="16,8 56,32 16,56"></polygon>
+      </svg>
+      <svg id="pause-icon" viewBox="0 0 64 64" style="display:none">
+        <rect x="16" y="12" width="12" height="40"></rect>
+        <rect x="36" y="12" width="12" height="40"></rect>
+      </svg>
+    </button>
+    <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="1">
+    <audio id="audio" preload="auto" autoplay></audio>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const albumCoverEl = document.getElementById('album-cover');
+      const bgBlurEl     = document.getElementById('bg-blur');
+      const songTitleEl  = document.getElementById('song-title');
+      const songArtistEl = document.getElementById('song-artist');
+      const audio        = document.getElementById('audio');
+      const playBtn      = document.getElementById('play-btn');
+      const playIcon     = document.getElementById('play-icon');
+      const pauseIcon    = document.getElementById('pause-icon');
+      const volumeSlider = document.getElementById('volume-slider');
+      const menuBtn      = document.getElementById('menu-btn');
+      const menuPopup    = document.getElementById('menu-popup');
+      const statusIndicator = document.getElementById('status-indicator');
+      const statsBtn     = document.getElementById('stats-btn');
+      const statsPanel   = document.getElementById('stats-panel');
+      const closeStatsBtn = document.getElementById('close-stats');
+
+      const coverUrl = "https://erik-server.ddns.net/image";
+      const metaUrl  = "https://erik-server.ddns.net/metadata";
+      const streamUrl = "https://erik-server.ddns.net/stream";
+      const statusUrl = "https://erik-server.ddns.net/status";
+      
+      // Stream management variables
+      let isPlaying = false;
+      let shouldBePlayingState = false;
+      let lastPlayTime = 0;
+      let stallCheckInterval;
+      let reconnectAttempts = 0;
+      let maxReconnectAttempts = 5;
+      let reconnectDelay = 1000;
+      let isReconnecting = false;
+      let startTime = Date.now();
+      
+      // Metadata management
+      let lastSongData = { title: '', artist: '' };
+      let lastCoverHash = '';
+      let hasValidCover = false;
+      
+      // Stats tracking
+      let statsData = {
+        reconnects: 0,
+        packetsLost: 0,
+        downloadSpeed: 0,
+        bytesLoaded: 0,
+        lastLoadTime: Date.now()
+      };
+
+      // Set initial audio source and force autoplay
+      audio.src = streamUrl;
+      audio.crossOrigin = "anonymous";
+      audio.autoplay = true;
+      audio.preload = "auto";
+
+      // Auto-start the stream when page loads - FIXED APPROACH
+      function forceAutoPlay() {
+        shouldBePlayingState = true;
+        
+        // Simple direct approach first
+        setTimeout(() => {
+          audio.play().then(() => {
+            showStatus('Auto-started', '');
+            console.log('Auto-play successful!');
+          }).catch(e => {
+            console.log('Auto-play blocked, waiting for interaction:', e);
+            setupInteractionFallback();
+          });
+        }, 100);
+      }
+      
+      function setupInteractionFallback() {
+        const startOnInteraction = (e) => {
+          if (!isPlaying && shouldBePlayingState) {
+            audio.play().then(() => {
+              console.log('Started on user interaction');
+              showStatus('Started', '');
+            }).catch(e => {
+              console.log('Failed to start on interaction:', e);
+            });
+          }
+          document.removeEventListener('click', startOnInteraction);
+          document.removeEventListener('touchstart', startOnInteraction);
+          document.removeEventListener('keydown', startOnInteraction);
+        };
+        
+        document.addEventListener('click', startOnInteraction);
+        document.addEventListener('touchstart', startOnInteraction);
+        document.addEventListener('keydown', startOnInteraction);
+      }
+      
+      // Start when ready
+      forceAutoPlay();
+
+      function showStatus(message, type = '') {
+        statusIndicator.textContent = message;
+        statusIndicator.className = `show ${type}`;
+        setTimeout(() => {
+          statusIndicator.classList.remove('show');
+        }, 3000);
+      }
+
+      function setAlbumCover(src, forceUpdate = false) {
+        if (!albumCoverEl || !bgBlurEl) return;
+        
+        const currentHash = Date.now().toString();
+        if (!forceUpdate && lastCoverHash === currentHash) return;
+        
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          // Remove old images and add new one with fade
+          const existingImages = albumCoverEl.querySelectorAll('img');
+          
+          const newImg = img.cloneNode();
+          newImg.style.width = "100%";
+          newImg.style.height = "100%";
+          newImg.style.objectFit = "cover";
+          newImg.style.borderRadius = "12px";
+          newImg.style.opacity = "0";
+          newImg.style.transition = "opacity 0.5s ease";
+          
+          albumCoverEl.appendChild(newImg);
+          albumCoverEl.style.fontSize = '0'; // Hide radio emoji
+          
+          // Fade in new image
+          setTimeout(() => {
+            newImg.style.opacity = "1";
+          }, 50);
+          
+          // Fade out and remove old images
+          existingImages.forEach(oldImg => {
+            oldImg.style.opacity = "0";
+            setTimeout(() => {
+              if (oldImg.parentNode) oldImg.remove();
+            }, 500);
+          });
+          
+          // Update background with fade
+          bgBlurEl.style.opacity = '0.5';
+          setTimeout(() => {
+            bgBlurEl.src = src + '?cache=' + currentHash;
+            bgBlurEl.style.opacity = '1';
+          }, 250);
+          
+          lastCoverHash = currentHash;
+          hasValidCover = true;
+        };
+        img.onerror = () => {
+          // Show radio emoji when no cover
+          const existingImages = albumCoverEl.querySelectorAll('img');
+          existingImages.forEach(img => {
+            img.style.opacity = "0";
+            setTimeout(() => {
+              if (img.parentNode) img.remove();
+            }, 500);
+          });
+          
+          setTimeout(() => {
+            albumCoverEl.style.fontSize = '3rem';
+            albumCoverEl.textContent = "📻";
+            bgBlurEl.style.opacity = '0';
+          }, 500);
+          
+          hasValidCover = false;
+        };
+        img.src = src + '?cache=' + currentHash;
+      }
+
+      async function fetchMetadata() {
+        try {
+          const response = await fetch(metaUrl + '?cache=' + Date.now());
+          const txt = await response.text();
+          let song = "Nincs duma (Csak zene)";
+          let artist = "Levél+";
+
+          try {
+            const j = JSON.parse(txt);
+            if (j.artist && j.title) {
+              artist = j.artist;
+              song = j.title;
+            } else if (j.song) {
+              const parts = j.song.split('#');
+              if (parts.length === 2) {
+                artist = parts[0];
+                song = parts[1];
+              }
+            }
+          } catch {
+            if (txt.includes("#")) {
+              const parts = txt.split("#");
+              artist = parts[0].trim();
+              song = parts[1].trim();
+            } else if (txt.trim() && txt.trim() !== '') {
+              const parts = txt.trim().split(/\s+/);
+              artist = parts.shift();
+              song = parts.join(' ') || txt.trim();
+            }
+          }
+
+          // Check if song actually changed before updating
+          const currentSongData = { title: song, artist: artist };
+          const songChanged = (
+            lastSongData.title !== currentSongData.title || 
+            lastSongData.artist !== currentSongData.artist
+          );
+
+          if (songChanged) {
+            // Update visible title & artist in DOM
+            const displaySong = song.replace(/\s*\(/g, "<br>(");
+            songTitleEl.innerHTML = `<b>${displaySong}</b>`;
+            songArtistEl.textContent = artist;
+
+            // Update cover art only when song changes with fade
+            setAlbumCover(coverUrl, true);
+
+            // Update Media Session metadata
+            if ("mediaSession" in navigator) {
+              navigator.mediaSession.metadata = new MediaMetadata({
+                title: song,
+                artist: artist,
+                album: "",
+                artwork: [
+                  {
+                    src: coverUrl + '?cache=' + Date.now(),
+                    sizes: '512x512',
+                    type: 'image/png'
+                  }
+                ]
+              });
+            }
+
+            lastSongData = currentSongData;
+          }
+        } catch (e) {
+          console.error('Metadata fetch error:', e);
+        }
+      }
+
+      function manageLowLatency() {
+        if (!audio.buffered.length) return;
+        
+        try {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+          const currentTime = audio.currentTime;
+          const bufferAhead = bufferedEnd - currentTime;
+          
+          // If we have more than 8 seconds buffered, skip to reduce latency
+          if (bufferAhead > 8 && isPlaying) {
+            const newTime = bufferedEnd - 2; // Keep 2 seconds buffer
+            if (newTime > currentTime) {
+              audio.currentTime = newTime;
+              console.log('Reduced latency by skipping to live edge');
+            }
+          }
+        } catch (e) {
+          // Ignore errors in buffer management
+        }
+      }
+
+      function jumpToLive() {
+        if (!audio.buffered.length) return;
+        
+        try {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+          audio.currentTime = bufferedEnd - 1; // Jump to almost the end
+          console.log('Jumped to live stream');
+        } catch (e) {
+          console.error('Could not jump to live:', e);
+        }
+      }
+
+      function checkStreamHealth() {
+        if (!shouldBePlayingState) return;
+        
+        const currentTime = Date.now();
+        const timeSinceLastPlay = currentTime - lastPlayTime;
+        
+        // If audio should be playing but hasn't updated currentTime in 5 seconds
+        if (shouldBePlayingState && audio.paused && timeSinceLastPlay > 5000) {
+          console.log('Stream appears stalled, attempting restart...');
+          statsData.packetsLost++;
+          restartStream();
+        }
+        
+        // Check if audio is playing but hasn't progressed
+        if (!audio.paused && timeSinceLastPlay > 8000) {
+          console.log('Audio stuck, restarting stream...');
+          statsData.packetsLost++;
+          restartStream();
+        }
+      }
+
+      function restartStream() {
+        if (isReconnecting) return;
+        
+        isReconnecting = true;
+        reconnectAttempts++;
+        statsData.reconnects++;
+        
+        showStatus('Reconnecting...', 'reconnecting');
+        
+        // Stop current stream
+        audio.pause();
+        audio.currentTime = 0;
+        
+        // Wait a moment before reconnecting
+        setTimeout(() => {
+          audio.load(); // This reloads the stream
+          
+          if (shouldBePlayingState) {
+            audio.play().then(() => {
+              reconnectAttempts = 0;
+              reconnectDelay = 1000;
+              isReconnecting = false;
+              showStatus('Connected', '');
+              // Jump to live after reconnect
+              setTimeout(jumpToLive, 1000);
+            }).catch(e => {
+              console.error('Restart failed:', e);
+              isReconnecting = false;
+              
+              if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectDelay *= 1.5; // Exponential backoff
+                setTimeout(restartStream, reconnectDelay);
+              } else {
+                showStatus('Connection failed', 'error');
+                reconnectAttempts = 0;
+                reconnectDelay = 1000;
+              }
+            });
+          } else {
+            isReconnecting = false;
+          }
+        }, 1000);
+      }
+
+      function togglePlay() {
+        if (audio.paused) {
+          shouldBePlayingState = true;
+          audio.play().then(() => {
+            // Jump to live when resuming after pause
+            setTimeout(jumpToLive, 500);
+          }).catch(e => {
+            console.error('Play failed:', e);
+            showStatus('Play failed, retrying...', 'error');
+            restartStream();
+          });
+        } else {
+          shouldBePlayingState = false;
+          audio.pause();
+        }
+      }
+
+      async function fetchStreamStatus() {
+        try {
+          console.log('Fetching status from:', statusUrl);
+          const response = await fetch(statusUrl + '?cache=' + Date.now());
+          console.log('Status response:', response.status);
+          
+          const text = await response.text();
+          console.log('Raw status data:', text);
+          
+          const statusData = JSON.parse(text);
+          console.log('Parsed status data:', statusData);
+          
+          // Parse Icecast data structure
+          const source = statusData.icestats?.source;
+          console.log('Source data:', source);
+          
+          if (source) {
+            // Update codec from server_type and subtype
+            let codec = 'Unknown';
+            if (source.server_type && source.subtype) {
+              if (source.server_type.includes('ogg') && source.subtype === 'Opus') {
+                codec = 'Opus';
+              } else if (source.server_type.includes('ogg')) {
+                codec = 'Ogg Vorbis';
+              } else if (source.server_type.includes('mpeg')) {
+                codec = 'MP3';
+              } else {
+                codec = source.subtype || source.server_type;
+              }
+            }
+            console.log('Detected codec:', codec);
+            document.getElementById('stream-codec').textContent = codec;
+            
+            // Update bitrate from ice-bitrate or bitrate
+            const bitrate = source['ice-bitrate'] || source.bitrate;
+            console.log('Detected bitrate:', bitrate);
+            if (bitrate) {
+              document.getElementById('stream-bitrate').textContent = bitrate + ' kbps';
+              
+              // Calculate theoretical download speed from bitrate
+              const theoreticalSpeed = (bitrate / 8); // Convert kbps to KB/s
+              document.getElementById('download-speed').textContent = theoreticalSpeed.toFixed(1) + ' KB/s';
+            } else {
+              document.getElementById('stream-bitrate').textContent = 'Unknown';
+              document.getElementById('download-speed').textContent = 'Unknown';
+            }
+            
+          } else {
+            console.log('No source data found in status');
+            // Fallback if no source data
+            document.getElementById('stream-codec').textContent = 'No source data';
+            document.getElementById('stream-bitrate').textContent = 'No source data';
+            document.getElementById('download-speed').textContent = 'No source data';
+          }
+          
+        } catch (e) {
+          console.error('Status fetch error:', e);
+          // Show the error in stats
+          document.getElementById('stream-codec').textContent = 'Error: ' + e.message;
+          document.getElementById('stream-bitrate').textContent = 'Error: ' + e.message;
+          document.getElementById('download-speed').textContent = 'Error: ' + e.message;
+        }
+      }
+      
+      function calculateDownloadSpeed() {
+        const now = Date.now();
+        if (audio.buffered.length > 0) {
+          const timeDiff = now - statsData.lastLoadTime;
+          if (timeDiff > 3000) { // Update every 3 seconds
+            const newBytesLoaded = audio.buffered.end(audio.buffered.length - 1) * 128 * 1000 / 8; // Assume 128kbps
+            const bytesDiff = newBytesLoaded - statsData.bytesLoaded;
+            const speed = (bytesDiff / (timeDiff / 1000)) / 1024; // KB/s
+            
+            if (speed > 0) {
+              statsData.downloadSpeed = speed;
+              document.getElementById('download-speed').textContent = speed.toFixed(1) + ' KB/s';
+            }
+            
+            statsData.bytesLoaded = newBytesLoaded;
+            statsData.lastLoadTime = now;
+          }
+        } else {
+          document.getElementById('download-speed').textContent = 'Connecting...';
+        }
+      }
+
+      function updateStats() {
+        // Buffer stats
+        if (audio.buffered.length > 0) {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+          const bufferLength = bufferedEnd - audio.currentTime;
+          document.getElementById('buffer-length').textContent = bufferLength.toFixed(1) + 's';
+          
+          let bufferHealth = 'Good';
+          let healthClass = '';
+          if (bufferLength < 2) {
+            bufferHealth = 'Low';
+            healthClass = 'warning';
+          } else if (bufferLength > 10) {
+            bufferHealth = 'High';
+            healthClass = 'warning';
+          }
+          const healthEl = document.getElementById('buffer-health');
+          healthEl.textContent = bufferHealth;
+          healthEl.className = 'stat-value ' + healthClass;
+          
+          // Estimated latency
+          document.getElementById('estimated-latency').textContent = 
+            Math.max(2, bufferLength).toFixed(1) + 's';
+        } else {
+          document.getElementById('buffer-length').textContent = '0.0s';
+          document.getElementById('buffer-health').textContent = 'No Buffer';
+          document.getElementById('estimated-latency').textContent = 'Unknown';
+        }
+      }
+
+      // Audio event listeners - setup events on the main audio element
+      audio.addEventListener('play', () => {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+        isPlaying = true;
+        lastPlayTime = Date.now();
+        
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.playbackState = "playing";
+        }
+      });
+
+      audio.addEventListener('pause', () => {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        isPlaying = false;
+        
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.playbackState = "paused";
+        }
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        if (isPlaying) {
+          lastPlayTime = Date.now();
+        }
+      });
+
+      audio.addEventListener('waiting', () => {
+        showStatus('Buffering...', 'buffering');
+      });
+
+      audio.addEventListener('canplay', () => {
+        if (shouldBePlayingState && audio.paused) {
+          audio.play();
+        }
+      });
+
+      audio.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
+        showStatus('Stream error, reconnecting...', 'error');
+        statsData.packetsLost++;
+        restartStream();
+      });
+
+      audio.addEventListener('stalled', () => {
+        console.log('Stream stalled');
+        showStatus('Stream stalled, reconnecting...', 'error');
+        setTimeout(() => {
+          if (shouldBePlayingState) {
+            restartStream();
+          }
+        }, 2000);
+      });
+
+      audio.addEventListener('loadstart', () => {
+        statsData.lastLoadTime = Date.now();
+      });
+
+      // Control event listeners
+      playBtn.addEventListener('click', togglePlay);
+      volumeSlider.addEventListener('input', e => {
+        audio.volume = e.target.value;
+      });
+
+      // Stats panel controls
+      statsBtn.addEventListener('click', e => {
+        statsPanel.classList.toggle('active');
+        e.stopPropagation();
+      });
+      
+      closeStatsBtn.addEventListener('click', () => {
+        statsPanel.classList.remove('active');
+      });
+
+      // Media Session handlers
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.setActionHandler('play', () => {
+          shouldBePlayingState = true;
+          audio.play().then(() => {
+            setTimeout(jumpToLive, 500);
+          });
+        });
+        
+        navigator.mediaSession.setActionHandler('pause', () => {
+          shouldBePlayingState = false;
+          audio.pause();
+        });
+      }
+
+      // Initialize
+      setAlbumCover(coverUrl, true);
+      fetchMetadata();
+      fetchStreamStatus();
+      
+      // Set up intervals
+      setInterval(fetchMetadata, 4000); // Check metadata every 4 seconds
+      setInterval(fetchStreamStatus, 5000); // Check stream status every 5 seconds
+      setInterval(checkStreamHealth, 3000); // Check stream health every 3 seconds
+      setInterval(manageLowLatency, 8000); // Manage latency every 8 seconds
+      setInterval(updateStats, 1000); // Update stats every second
+
+      // Menu functionality
+      menuBtn.addEventListener('click', e => {
+        menuPopup.classList.toggle('active');
+        // Close stats if open
+        statsPanel.classList.remove('active');
+        e.stopPropagation();
+      });
+      
+      window.addEventListener('click', (e) => {
+        if (!statsPanel.contains(e.target) && !statsBtn.contains(e.target)) {
+          statsPanel.classList.remove('active');
+        }
+        if (!menuPopup.contains(e.target) && !menuBtn.contains(e.target)) {
+          menuPopup.classList.remove('active');
+        }
+      });
+      
+      menuPopup.addEventListener('click', e => e.stopPropagation());
+      statsPanel.addEventListener('click', e => e.stopPropagation());
+    });
+  </script>
+</body>
+</html>
