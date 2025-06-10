@@ -313,6 +313,10 @@
     #status-indicator.reconnecting {
       background: rgba(0, 150, 255, 0.8);
     }
+    #status-indicator.connected {
+      background: rgba(0, 255, 0, 0.8);
+      color: #000;
+    }
 
     /*----------------------------------------*/
     /* 7) Bottom controls                     */
@@ -606,33 +610,49 @@
   <!-- Stats Panel -->
   <div id="stats-panel">
     <button id="close-stats">×</button>
-    <h2>📊 NERD STATS</h2>
+    <h2>📊 FAST RECONNECT</h2>
     
     <div class="stat-group">
-      <h3>🎵 Stream Stats</h3>
+      <h3>🌐 Connection Monitor</h3>
       <div class="stat-item">
-        <span class="stat-label">Codec:</span>
-        <span class="stat-value" id="stream-codec">Loading...</span>
+        <span class="stat-label">Monitoring:</span>
+        <span class="stat-value" id="monitoring-active">No</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Bitrate:</span>
-        <span class="stat-value" id="stream-bitrate">Loading...</span>
+        <span class="stat-label">DNS Status:</span>
+        <span class="stat-value" id="dns-status">Not tested</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Download Speed:</span>
-        <span class="stat-value" id="download-speed">Loading...</span>
+        <span class="stat-label">Ping Failures:</span>
+        <span class="stat-value" id="ping-failures">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Fast Reconnects:</span>
+        <span class="stat-value" id="reconnect-count">0</span>
+      </div>
+    </div>
+    
+    <div class="stat-group">
+      <h3>🎵 Audio Stream</h3>
+      <div class="stat-item">
+        <span class="stat-label">Stream Status:</span>
+        <span class="stat-value" id="stream-status">Stopped</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Audio Progress:</span>
+        <span class="stat-value" id="audio-progress">0.0s</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Volume Level:</span>
+        <span class="stat-value" id="volume-level">100%</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Buffer Length:</span>
-        <span class="stat-value" id="buffer-length">Loading...</span>
+        <span class="stat-value" id="buffer-length">0.0s</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Buffer Health:</span>
-        <span class="stat-value" id="buffer-health">Loading...</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Estimated Latency:</span>
-        <span class="stat-value" id="estimated-latency">Loading...</span>
+        <span class="stat-label">Last Stall:</span>
+        <span class="stat-value" id="last-stall">Never</span>
       </div>
     </div>
   </div>
@@ -663,7 +683,9 @@
       </svg>
     </button>
     <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="1">
-    <audio id="audio" preload="auto" autoplay></audio>
+    
+    <!-- Single audio element -->
+    <audio id="audio" preload="auto"></audio>
   </div>
 
   <script>
@@ -689,75 +711,289 @@
       const streamUrl = "https://erik-server.ddns.net/stream";
       const statusUrl = "https://erik-server.ddns.net/status";
       
-      // Stream management variables
+      // Simple state management
       let isPlaying = false;
       let shouldBePlayingState = false;
-      let lastPlayTime = 0;
-      let stallCheckInterval;
-      let reconnectAttempts = 0;
-      let maxReconnectAttempts = 5;
-      let reconnectDelay = 1000;
-      let isReconnecting = false;
-      let startTime = Date.now();
+      let monitoringActive = false;
+      let reconnectCount = 0;
+      let pingFailures = 0;
+      let lastAudioProgress = 0;
+      let dnsStatus = 'Not tested';
+      let lastStallTime = null;
+      let targetVolume = 1; // Remember target volume for fading
+      let isReconnecting = false; // Prevent multiple reconnects
+      let reconnectAttempts = 0; // Track consecutive reconnect attempts
       
+      // Intervals
+      let connectionCheckInterval = null;
+      let progressCheckInterval = null;
+
       // Metadata management
       let lastSongData = { title: '', artist: '' };
       let lastCoverHash = '';
-      let hasValidCover = false;
-      
-      // Stats tracking
-      let statsData = {
-        reconnects: 0,
-        packetsLost: 0,
-        downloadSpeed: 0,
-        bytesLoaded: 0,
-        lastLoadTime: Date.now()
-      };
 
-      // Set initial audio source and force autoplay
+      // Set initial audio properties
       audio.src = streamUrl;
       audio.crossOrigin = "anonymous";
-      audio.autoplay = true;
       audio.preload = "auto";
+      audio.volume = volumeSlider.value;
+      targetVolume = volumeSlider.value;
 
-      // Auto-start the stream when page loads - FIXED APPROACH
-      function forceAutoPlay() {
-        shouldBePlayingState = true;
+      // DNS ping to check connection
+      function pingDNS() {
+        const startTime = Date.now();
         
-        // Simple direct approach first
-        setTimeout(() => {
-          audio.play().then(() => {
-            showStatus('Auto-started', '');
-            console.log('Auto-play successful!');
-          }).catch(e => {
-            console.log('Auto-play blocked, waiting for interaction:', e);
-            setupInteractionFallback();
-          });
-        }, 100);
-      }
-      
-      function setupInteractionFallback() {
-        const startOnInteraction = (e) => {
-          if (!isPlaying && shouldBePlayingState) {
-            audio.play().then(() => {
-              console.log('Started on user interaction');
-              showStatus('Started', '');
-            }).catch(e => {
-              console.log('Failed to start on interaction:', e);
-            });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1000);
+        
+        fetch('https://dns.google/resolve?name=google.com&type=A', {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-cache'
+        }).then(response => {
+          clearTimeout(timeoutId);
+          if (response.ok) {
+            dnsStatus = 'Online (' + (Date.now() - startTime) + 'ms)';
+          } else {
+            dnsStatus = 'DNS Error';
+            handleConnectionFailure();
           }
-          document.removeEventListener('click', startOnInteraction);
-          document.removeEventListener('touchstart', startOnInteraction);
-          document.removeEventListener('keydown', startOnInteraction);
-        };
+          updateStats();
+        }).catch(error => {
+          clearTimeout(timeoutId);
+          if (error.name === 'AbortError') {
+            dnsStatus = 'Timeout (>1000ms)';
+          } else {
+            dnsStatus = 'DNS Failed';
+          }
+          handleConnectionFailure();
+          updateStats();
+        });
+      }
+
+      function handleConnectionFailure() {
+        pingFailures++;
+        console.log('Connection failed, ping failures:', pingFailures);
         
-        document.addEventListener('click', startOnInteraction);
-        document.addEventListener('touchstart', startOnInteraction);
-        document.addEventListener('keydown', startOnInteraction);
+        // If audio is playing and we detect connection issues
+        if (shouldBePlayingState && isPlaying) {
+          // Check if audio is actually progressing immediately
+          setTimeout(() => checkAudioProgress(), 500); // Check faster
+        }
+      }
+
+      function checkAudioProgress() {
+        if (!shouldBePlayingState || audio.paused || isReconnecting) return;
+        
+        const currentProgress = audio.currentTime;
+        const hasProgressed = Math.abs(currentProgress - lastAudioProgress) > 0.05; // More sensitive detection
+        
+        if (hasProgressed) {
+          lastAudioProgress = currentProgress;
+          reconnectAttempts = 0; // Reset attempts when audio is working
+        } else {
+          // Audio not progressing - ultra-fast reconnect
+          console.log('Audio stopped progressing, ultra-fast reconnecting...');
+          fastReconnect();
+        }
+        
+        updateStats();
+      }
+
+      function fastReconnect() {
+        // Prevent multiple reconnects running at same time
+        if (isReconnecting) {
+          console.log('Reconnect already in progress, skipping...');
+          return;
+        }
+        
+        isReconnecting = true;
+        reconnectCount++;
+        reconnectAttempts++;
+        lastStallTime = Date.now();
+        
+        console.log(`Starting ultra-fast reconnect #${reconnectAttempts}...`);
+        showStatus('Reconnecting...', 'reconnecting');
+        
+        // If too many attempts, wait longer before trying
+        if (reconnectAttempts > 3) {
+          console.log('Multiple reconnect attempts, waiting longer...');
+          setTimeout(() => {
+            doReconnect();
+          }, 2000);
+        } else {
+          doReconnect();
+        }
       }
       
-      // Start when ready
-      forceAutoPlay();
+      function doReconnect() {
+        // Stop and reload the stream
+        audio.pause();
+        audio.currentTime = 0;
+        audio.load();
+        
+        // Try to start playing again
+        audio.play().then(() => {
+          console.log('Ultra-fast reconnect successful');
+          isReconnecting = false;
+          reconnectAttempts = 0; // Reset attempts on success
+          showStatus('Reconnected!', 'connected');
+          
+          // Jump to live after a moment
+          setTimeout(() => jumpToLive(), 1000);
+          
+        }).catch(e => {
+          console.error('Reconnect failed:', e);
+          showStatus('Reconnect failed, retrying...', 'error');
+          
+          // Allow another reconnect attempt after delay
+          setTimeout(() => {
+            isReconnecting = false;
+            if (shouldBePlayingState && reconnectAttempts < 5) {
+              fastReconnect();
+            } else if (reconnectAttempts >= 5) {
+              console.log('Too many reconnect attempts, stopping...');
+              showStatus('Connection problems, please try again', 'error');
+              reconnectAttempts = 0;
+              isReconnecting = false;
+            }
+          }, reconnectAttempts * 1000); // Exponential backoff
+        });
+      }
+
+      function fadeOut(callback) {
+        const startVolume = audio.volume;
+        const fadeTime = 300; // 300ms fade out
+        const steps = 15;
+        const volumeStep = startVolume / steps;
+        const timeStep = fadeTime / steps;
+        
+        let currentStep = 0;
+        const fadeInterval = setInterval(() => {
+          currentStep++;
+          audio.volume = Math.max(0, startVolume - (volumeStep * currentStep));
+          
+          if (currentStep >= steps) {
+            clearInterval(fadeInterval);
+            audio.volume = 0;
+            if (callback) callback();
+          }
+        }, timeStep);
+      }
+
+      function fadeIn() {
+        const fadeTime = 400; // 400ms fade in
+        const steps = 20;
+        const volumeStep = targetVolume / steps;
+        const timeStep = fadeTime / steps;
+        
+        audio.volume = 0;
+        let currentStep = 0;
+        
+        const fadeInterval = setInterval(() => {
+          currentStep++;
+          audio.volume = Math.min(targetVolume, volumeStep * currentStep);
+          
+          if (currentStep >= steps) {
+            clearInterval(fadeInterval);
+            audio.volume = targetVolume;
+          }
+        }, timeStep);
+      }
+
+      function jumpToLive() {
+        if (!audio.buffered.length) {
+          console.log('No buffer yet, will try jump to live again...');
+          setTimeout(() => jumpToLive(), 1000);
+          return;
+        }
+        
+        try {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+          const currentTime = audio.currentTime;
+          
+          // Force jump to the very end of the buffer (live edge)
+          const livePosition = bufferedEnd - 0.5; // Just 0.5 seconds from live edge
+          
+          console.log(`Jumping to live: current=${currentTime.toFixed(1)}s, buffer=${bufferedEnd.toFixed(1)}s, jumping to=${livePosition.toFixed(1)}s`);
+          
+          if (livePosition > currentTime) {
+            audio.currentTime = livePosition;
+            console.log('Jumped to live stream position');
+          } else {
+            console.log('Already at live position');
+          }
+        } catch (e) {
+          console.error('Jump to live failed:', e);
+          // Try again in a moment
+          setTimeout(() => jumpToLive(), 1000);
+        }
+      }
+
+      function startMonitoring() {
+        if (monitoringActive) return;
+        
+        console.log('Starting connection monitoring...');
+        monitoringActive = true;
+        
+        // Start DNS ping every 500ms
+        connectionCheckInterval = setInterval(() => {
+          pingDNS();
+        }, 500);
+        
+        // Start audio progress checking every 500ms (faster detection)
+        progressCheckInterval = setInterval(() => {
+          checkAudioProgress();
+        }, 500);
+        
+        updateStats();
+      }
+
+      function stopMonitoring() {
+        console.log('Stopping connection monitoring...');
+        monitoringActive = false;
+        
+        if (connectionCheckInterval) {
+          clearInterval(connectionCheckInterval);
+          connectionCheckInterval = null;
+        }
+        
+        if (progressCheckInterval) {
+          clearInterval(progressCheckInterval);
+          progressCheckInterval = null;
+        }
+        
+        updateStats();
+      }
+
+      function updateStats() {
+        document.getElementById('monitoring-active').textContent = monitoringActive ? 'Yes' : 'No';
+        document.getElementById('monitoring-active').className = 'stat-value ' + (monitoringActive ? '' : 'warning');
+        
+        document.getElementById('dns-status').textContent = dnsStatus;
+        document.getElementById('dns-status').className = 'stat-value ' + (dnsStatus.includes('Online') ? '' : 'error');
+        
+        document.getElementById('ping-failures').textContent = pingFailures;
+        document.getElementById('reconnect-count').textContent = reconnectCount;
+        
+        document.getElementById('stream-status').textContent = !audio.paused ? 'Playing' : 'Stopped';
+        document.getElementById('audio-progress').textContent = lastAudioProgress.toFixed(1) + 's';
+        document.getElementById('volume-level').textContent = Math.round(audio.volume * 100) + '%';
+        
+        // Buffer stats
+        if (audio.buffered.length > 0) {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+          const bufferLength = bufferedEnd - audio.currentTime;
+          document.getElementById('buffer-length').textContent = bufferLength.toFixed(1) + 's';
+        } else {
+          document.getElementById('buffer-length').textContent = '0.0s';
+        }
+        
+        if (lastStallTime) {
+          const stallAgo = Math.floor((Date.now() - lastStallTime) / 1000);
+          document.getElementById('last-stall').textContent = stallAgo + 's ago';
+        }
+      }
 
       function showStatus(message, type = '') {
         statusIndicator.textContent = message;
@@ -776,7 +1012,6 @@
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
-          // Remove old images and add new one with fade
           const existingImages = albumCoverEl.querySelectorAll('img');
           
           const newImg = img.cloneNode();
@@ -788,14 +1023,12 @@
           newImg.style.transition = "opacity 0.5s ease";
           
           albumCoverEl.appendChild(newImg);
-          albumCoverEl.style.fontSize = '0'; // Hide radio emoji
+          albumCoverEl.style.fontSize = '0';
           
-          // Fade in new image
           setTimeout(() => {
             newImg.style.opacity = "1";
           }, 50);
           
-          // Fade out and remove old images
           existingImages.forEach(oldImg => {
             oldImg.style.opacity = "0";
             setTimeout(() => {
@@ -803,7 +1036,6 @@
             }, 500);
           });
           
-          // Update background with fade
           bgBlurEl.style.opacity = '0.5';
           setTimeout(() => {
             bgBlurEl.src = src + '?cache=' + currentHash;
@@ -811,10 +1043,8 @@
           }, 250);
           
           lastCoverHash = currentHash;
-          hasValidCover = true;
         };
         img.onerror = () => {
-          // Show radio emoji when no cover
           const existingImages = albumCoverEl.querySelectorAll('img');
           existingImages.forEach(img => {
             img.style.opacity = "0";
@@ -828,8 +1058,6 @@
             albumCoverEl.textContent = "📻";
             bgBlurEl.style.opacity = '0';
           }, 500);
-          
-          hasValidCover = false;
         };
         img.src = src + '?cache=' + currentHash;
       }
@@ -865,7 +1093,6 @@
             }
           }
 
-          // Check if song actually changed before updating
           const currentSongData = { title: song, artist: artist };
           const songChanged = (
             lastSongData.title !== currentSongData.title || 
@@ -873,15 +1100,12 @@
           );
 
           if (songChanged) {
-            // Update visible title & artist in DOM
             const displaySong = song.replace(/\s*\(/g, "<br>(");
             songTitleEl.innerHTML = `<b>${displaySong}</b>`;
             songArtistEl.textContent = artist;
 
-            // Update cover art only when song changes with fade
             setAlbumCover(coverUrl, true);
 
-            // Update Media Session metadata
             if ("mediaSession" in navigator) {
               navigator.mediaSession.metadata = new MediaMetadata({
                 title: song,
@@ -904,243 +1128,41 @@
         }
       }
 
-      function manageLowLatency() {
-        if (!audio.buffered.length) return;
-        
-        try {
-          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-          const currentTime = audio.currentTime;
-          const bufferAhead = bufferedEnd - currentTime;
-          
-          // If we have more than 8 seconds buffered, skip to reduce latency
-          if (bufferAhead > 8 && isPlaying) {
-            const newTime = bufferedEnd - 2; // Keep 2 seconds buffer
-            if (newTime > currentTime) {
-              audio.currentTime = newTime;
-              console.log('Reduced latency by skipping to live edge');
-            }
-          }
-        } catch (e) {
-          // Ignore errors in buffer management
-        }
-      }
-
-      function jumpToLive() {
-        if (!audio.buffered.length) return;
-        
-        try {
-          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-          audio.currentTime = bufferedEnd - 1; // Jump to almost the end
-          console.log('Jumped to live stream');
-        } catch (e) {
-          console.error('Could not jump to live:', e);
-        }
-      }
-
-      function checkStreamHealth() {
-        if (!shouldBePlayingState) return;
-        
-        const currentTime = Date.now();
-        const timeSinceLastPlay = currentTime - lastPlayTime;
-        
-        // If audio should be playing but hasn't updated currentTime in 5 seconds
-        if (shouldBePlayingState && audio.paused && timeSinceLastPlay > 5000) {
-          console.log('Stream appears stalled, attempting restart...');
-          statsData.packetsLost++;
-          restartStream();
-        }
-        
-        // Check if audio is playing but hasn't progressed
-        if (!audio.paused && timeSinceLastPlay > 8000) {
-          console.log('Audio stuck, restarting stream...');
-          statsData.packetsLost++;
-          restartStream();
-        }
-      }
-
-      function restartStream() {
-        if (isReconnecting) return;
-        
-        isReconnecting = true;
-        reconnectAttempts++;
-        statsData.reconnects++;
-        
-        showStatus('Reconnecting...', 'reconnecting');
-        
-        // Stop current stream
-        audio.pause();
-        audio.currentTime = 0;
-        
-        // Wait a moment before reconnecting
-        setTimeout(() => {
-          audio.load(); // This reloads the stream
-          
-          if (shouldBePlayingState) {
-            audio.play().then(() => {
-              reconnectAttempts = 0;
-              reconnectDelay = 1000;
-              isReconnecting = false;
-              showStatus('Connected', '');
-              // Jump to live after reconnect
-              setTimeout(jumpToLive, 1000);
-            }).catch(e => {
-              console.error('Restart failed:', e);
-              isReconnecting = false;
-              
-              if (reconnectAttempts < maxReconnectAttempts) {
-                reconnectDelay *= 1.5; // Exponential backoff
-                setTimeout(restartStream, reconnectDelay);
-              } else {
-                showStatus('Connection failed', 'error');
-                reconnectAttempts = 0;
-                reconnectDelay = 1000;
-              }
-            });
-          } else {
-            isReconnecting = false;
-          }
-        }, 1000);
-      }
-
       function togglePlay() {
         if (audio.paused) {
           shouldBePlayingState = true;
+          
+          // Fade in when starting
+          audio.volume = 0;
           audio.play().then(() => {
-            // Jump to live when resuming after pause
-            setTimeout(jumpToLive, 500);
+            console.log('Audio started, beginning monitoring...');
+            startMonitoring();
+            fadeIn();
+            setTimeout(() => jumpToLive(), 1000);
           }).catch(e => {
             console.error('Play failed:', e);
             showStatus('Play failed, retrying...', 'error');
-            restartStream();
+            audio.volume = targetVolume; // Reset volume
+            fastReconnect();
           });
         } else {
           shouldBePlayingState = false;
-          audio.pause();
+          
+          // Fade out when stopping
+          fadeOut(() => {
+            audio.pause();
+            audio.volume = targetVolume; // Reset volume for next play
+            console.log('Audio paused, stopping monitoring...');
+            stopMonitoring();
+          });
         }
       }
 
-      async function fetchStreamStatus() {
-        try {
-          console.log('Fetching status from:', statusUrl);
-          const response = await fetch(statusUrl + '?cache=' + Date.now());
-          console.log('Status response:', response.status);
-          
-          const text = await response.text();
-          console.log('Raw status data:', text);
-          
-          const statusData = JSON.parse(text);
-          console.log('Parsed status data:', statusData);
-          
-          // Parse Icecast data structure
-          const source = statusData.icestats?.source;
-          console.log('Source data:', source);
-          
-          if (source) {
-            // Update codec from server_type and subtype
-            let codec = 'Unknown';
-            if (source.server_type && source.subtype) {
-              if (source.server_type.includes('ogg') && source.subtype === 'Opus') {
-                codec = 'Opus';
-              } else if (source.server_type.includes('ogg')) {
-                codec = 'Ogg Vorbis';
-              } else if (source.server_type.includes('mpeg')) {
-                codec = 'MP3';
-              } else {
-                codec = source.subtype || source.server_type;
-              }
-            }
-            console.log('Detected codec:', codec);
-            document.getElementById('stream-codec').textContent = codec;
-            
-            // Update bitrate from ice-bitrate or bitrate
-            const bitrate = source['ice-bitrate'] || source.bitrate;
-            console.log('Detected bitrate:', bitrate);
-            if (bitrate) {
-              document.getElementById('stream-bitrate').textContent = bitrate + ' kbps';
-              
-              // Calculate theoretical download speed from bitrate
-              const theoreticalSpeed = (bitrate / 8); // Convert kbps to KB/s
-              document.getElementById('download-speed').textContent = theoreticalSpeed.toFixed(1) + ' KB/s';
-            } else {
-              document.getElementById('stream-bitrate').textContent = 'Unknown';
-              document.getElementById('download-speed').textContent = 'Unknown';
-            }
-            
-          } else {
-            console.log('No source data found in status');
-            // Fallback if no source data
-            document.getElementById('stream-codec').textContent = 'No source data';
-            document.getElementById('stream-bitrate').textContent = 'No source data';
-            document.getElementById('download-speed').textContent = 'No source data';
-          }
-          
-        } catch (e) {
-          console.error('Status fetch error:', e);
-          // Show the error in stats
-          document.getElementById('stream-codec').textContent = 'Error: ' + e.message;
-          document.getElementById('stream-bitrate').textContent = 'Error: ' + e.message;
-          document.getElementById('download-speed').textContent = 'Error: ' + e.message;
-        }
-      }
-      
-      function calculateDownloadSpeed() {
-        const now = Date.now();
-        if (audio.buffered.length > 0) {
-          const timeDiff = now - statsData.lastLoadTime;
-          if (timeDiff > 3000) { // Update every 3 seconds
-            const newBytesLoaded = audio.buffered.end(audio.buffered.length - 1) * 128 * 1000 / 8; // Assume 128kbps
-            const bytesDiff = newBytesLoaded - statsData.bytesLoaded;
-            const speed = (bytesDiff / (timeDiff / 1000)) / 1024; // KB/s
-            
-            if (speed > 0) {
-              statsData.downloadSpeed = speed;
-              document.getElementById('download-speed').textContent = speed.toFixed(1) + ' KB/s';
-            }
-            
-            statsData.bytesLoaded = newBytesLoaded;
-            statsData.lastLoadTime = now;
-          }
-        } else {
-          document.getElementById('download-speed').textContent = 'Connecting...';
-        }
-      }
-
-      function updateStats() {
-        // Buffer stats
-        if (audio.buffered.length > 0) {
-          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-          const bufferLength = bufferedEnd - audio.currentTime;
-          document.getElementById('buffer-length').textContent = bufferLength.toFixed(1) + 's';
-          
-          let bufferHealth = 'Good';
-          let healthClass = '';
-          if (bufferLength < 2) {
-            bufferHealth = 'Low';
-            healthClass = 'warning';
-          } else if (bufferLength > 10) {
-            bufferHealth = 'High';
-            healthClass = 'warning';
-          }
-          const healthEl = document.getElementById('buffer-health');
-          healthEl.textContent = bufferHealth;
-          healthEl.className = 'stat-value ' + healthClass;
-          
-          // Estimated latency
-          document.getElementById('estimated-latency').textContent = 
-            Math.max(2, bufferLength).toFixed(1) + 's';
-        } else {
-          document.getElementById('buffer-length').textContent = '0.0s';
-          document.getElementById('buffer-health').textContent = 'No Buffer';
-          document.getElementById('estimated-latency').textContent = 'Unknown';
-        }
-      }
-
-      // Audio event listeners - setup events on the main audio element
+      // Audio event listeners
       audio.addEventListener('play', () => {
         playIcon.style.display = 'none';
         pauseIcon.style.display = 'block';
         isPlaying = true;
-        lastPlayTime = Date.now();
         
         if ("mediaSession" in navigator) {
           navigator.mediaSession.playbackState = "playing";
@@ -1157,9 +1179,11 @@
         }
       });
 
-      audio.addEventListener('timeupdate', () => {
-        if (isPlaying) {
-          lastPlayTime = Date.now();
+      audio.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
+        if (shouldBePlayingState) {
+          showStatus('Stream error, reconnecting...', 'error');
+          fastReconnect();
         }
       });
 
@@ -1167,37 +1191,18 @@
         showStatus('Buffering...', 'buffering');
       });
 
-      audio.addEventListener('canplay', () => {
-        if (shouldBePlayingState && audio.paused) {
-          audio.play();
-        }
-      });
-
-      audio.addEventListener('error', (e) => {
-        console.error('Audio error:', e);
-        showStatus('Stream error, reconnecting...', 'error');
-        statsData.packetsLost++;
-        restartStream();
-      });
-
       audio.addEventListener('stalled', () => {
-        console.log('Stream stalled');
-        showStatus('Stream stalled, reconnecting...', 'error');
-        setTimeout(() => {
-          if (shouldBePlayingState) {
-            restartStream();
-          }
-        }, 2000);
-      });
-
-      audio.addEventListener('loadstart', () => {
-        statsData.lastLoadTime = Date.now();
+        console.log('Audio stalled');
+        if (shouldBePlayingState) {
+          setTimeout(() => checkAudioProgress(), 2000);
+        }
       });
 
       // Control event listeners
       playBtn.addEventListener('click', togglePlay);
       volumeSlider.addEventListener('input', e => {
-        audio.volume = e.target.value;
+        targetVolume = parseFloat(e.target.value);
+        audio.volume = targetVolume;
       });
 
       // Stats panel controls
@@ -1214,33 +1219,80 @@
       if ("mediaSession" in navigator) {
         navigator.mediaSession.setActionHandler('play', () => {
           shouldBePlayingState = true;
+          audio.volume = 0;
           audio.play().then(() => {
-            setTimeout(jumpToLive, 500);
+            startMonitoring();
+            fadeIn();
+            setTimeout(() => jumpToLive(), 1000);
           });
         });
         
         navigator.mediaSession.setActionHandler('pause', () => {
           shouldBePlayingState = false;
-          audio.pause();
+          fadeOut(() => {
+            audio.pause();
+            audio.volume = targetVolume;
+            stopMonitoring();
+          });
         });
+      }
+
+      // Auto-start functionality
+      function forceAutoPlay() {
+        shouldBePlayingState = true;
+        
+        setTimeout(() => {
+          audio.volume = 0;
+          audio.play().then(() => {
+            showStatus('Auto-started', 'connected');
+            console.log('Auto-play successful, starting monitoring...');
+            startMonitoring();
+            fadeIn();
+          }).catch(e => {
+            console.log('Auto-play blocked, waiting for interaction:', e);
+            audio.volume = targetVolume; // Reset volume
+            setupInteractionFallback();
+          });
+        }, 100);
+      }
+      
+      function setupInteractionFallback() {
+        const startOnInteraction = (e) => {
+          if (!isPlaying && shouldBePlayingState) {
+            audio.volume = 0;
+            audio.play().then(() => {
+              console.log('Started on user interaction');
+              showStatus('Started', 'connected');
+              startMonitoring();
+              fadeIn();
+            }).catch(e => {
+              console.log('Failed to start on interaction:', e);
+              audio.volume = targetVolume;
+            });
+          }
+          document.removeEventListener('click', startOnInteraction);
+          document.removeEventListener('touchstart', startOnInteraction);
+          document.removeEventListener('keydown', startOnInteraction);
+        };
+        
+        document.addEventListener('click', startOnInteraction);
+        document.addEventListener('touchstart', startOnInteraction);
+        document.addEventListener('keydown', startOnInteraction);
       }
 
       // Initialize
       setAlbumCover(coverUrl, true);
       fetchMetadata();
-      fetchStreamStatus();
+      updateStats();
+      forceAutoPlay();
       
-      // Set up intervals
-      setInterval(fetchMetadata, 4000); // Check metadata every 4 seconds
-      setInterval(fetchStreamStatus, 5000); // Check stream status every 5 seconds
-      setInterval(checkStreamHealth, 3000); // Check stream health every 3 seconds
-      setInterval(manageLowLatency, 8000); // Manage latency every 8 seconds
-      setInterval(updateStats, 1000); // Update stats every second
+      // Only metadata updates run continuously
+      setInterval(fetchMetadata, 4000);
+      setInterval(updateStats, 1000);
 
       // Menu functionality
       menuBtn.addEventListener('click', e => {
         menuPopup.classList.toggle('active');
-        // Close stats if open
         statsPanel.classList.remove('active');
         e.stopPropagation();
       });
