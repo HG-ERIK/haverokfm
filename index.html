@@ -630,6 +630,10 @@
         <span class="stat-label">Fast Reconnects:</span>
         <span class="stat-value" id="reconnect-count">0</span>
       </div>
+      <div class="stat-item">
+        <span class="stat-label">Stream Reloads:</span>
+        <span class="stat-value" id="reload-count">0</span>
+      </div>
     </div>
     
     <div class="stat-group">
@@ -716,6 +720,7 @@
       let shouldBePlayingState = false;
       let monitoringActive = false;
       let reconnectCount = 0;
+      let reloadCount = 0; // New counter for stream reloads
       let pingFailures = 0;
       let lastAudioProgress = 0;
       let dnsStatus = 'Not tested';
@@ -861,6 +866,45 @@
         });
       }
 
+      // NEW FUNCTION: Force reload stream to get latest content
+      function reloadStreamToLive() {
+        console.log('Reloading stream to get latest content...');
+        reloadCount++;
+        showStatus('Loading live stream...', 'reconnecting');
+        
+        // Stop current playback
+        audio.pause();
+        audio.currentTime = 0;
+        
+        // Force reload by adding cache-busting parameter
+        const cacheBuster = '?t=' + Date.now();
+        audio.src = streamUrl + cacheBuster;
+        audio.load();
+        
+        // Start playing the fresh stream
+        audio.play().then(() => {
+          console.log('Stream reloaded successfully, now live!');
+          showStatus('Live stream loaded!', 'connected');
+          
+          // No need to jump to live since we're loading fresh
+          // But we can still do it after a short delay to ensure we're at the very edge
+          setTimeout(() => jumpToLive(), 500);
+          
+        }).catch(e => {
+          console.error('Stream reload failed:', e);
+          showStatus('Failed to load live stream', 'error');
+          
+          // Fallback to regular stream URL
+          audio.src = streamUrl;
+          audio.load();
+          audio.play().catch(err => {
+            console.error('Fallback also failed:', err);
+          });
+        });
+        
+        updateStats();
+      }
+
       function fadeOut(callback) {
         const startVolume = audio.volume;
         const fadeTime = 300; // 300ms fade out
@@ -975,6 +1019,7 @@
         
         document.getElementById('ping-failures').textContent = pingFailures;
         document.getElementById('reconnect-count').textContent = reconnectCount;
+        document.getElementById('reload-count').textContent = reloadCount; // New stat
         
         document.getElementById('stream-status').textContent = !audio.paused ? 'Playing' : 'Stopped';
         document.getElementById('audio-progress').textContent = lastAudioProgress.toFixed(1) + 's';
@@ -1132,19 +1177,11 @@
         if (audio.paused) {
           shouldBePlayingState = true;
           
-          // Fade in when starting
-          audio.volume = 0;
-          audio.play().then(() => {
-            console.log('Audio started, beginning monitoring...');
-            startMonitoring();
-            fadeIn();
-            setTimeout(() => jumpToLive(), 1000);
-          }).catch(e => {
-            console.error('Play failed:', e);
-            showStatus('Play failed, retrying...', 'error');
-            audio.volume = targetVolume; // Reset volume
-            fastReconnect();
-          });
+          // IMPORTANT: Always reload stream when resuming to get latest content
+          console.log('Play button pressed - reloading stream to get latest content');
+          reloadStreamToLive();
+          startMonitoring();
+          
         } else {
           shouldBePlayingState = false;
           
@@ -1163,6 +1200,9 @@
         playIcon.style.display = 'none';
         pauseIcon.style.display = 'block';
         isPlaying = true;
+        
+        // Fade in when starting to play
+        fadeIn();
         
         if ("mediaSession" in navigator) {
           navigator.mediaSession.playbackState = "playing";
@@ -1219,12 +1259,9 @@
       if ("mediaSession" in navigator) {
         navigator.mediaSession.setActionHandler('play', () => {
           shouldBePlayingState = true;
-          audio.volume = 0;
-          audio.play().then(() => {
-            startMonitoring();
-            fadeIn();
-            setTimeout(() => jumpToLive(), 1000);
-          });
+          console.log('Media session play - reloading stream');
+          reloadStreamToLive();
+          startMonitoring();
         });
         
         navigator.mediaSession.setActionHandler('pause', () => {
@@ -1242,33 +1279,18 @@
         shouldBePlayingState = true;
         
         setTimeout(() => {
-          audio.volume = 0;
-          audio.play().then(() => {
-            showStatus('Auto-started', 'connected');
-            console.log('Auto-play successful, starting monitoring...');
-            startMonitoring();
-            fadeIn();
-          }).catch(e => {
-            console.log('Auto-play blocked, waiting for interaction:', e);
-            audio.volume = targetVolume; // Reset volume
-            setupInteractionFallback();
-          });
+          console.log('Auto-play starting - loading fresh stream');
+          reloadStreamToLive();
+          startMonitoring();
         }, 100);
       }
       
       function setupInteractionFallback() {
         const startOnInteraction = (e) => {
           if (!isPlaying && shouldBePlayingState) {
-            audio.volume = 0;
-            audio.play().then(() => {
-              console.log('Started on user interaction');
-              showStatus('Started', 'connected');
-              startMonitoring();
-              fadeIn();
-            }).catch(e => {
-              console.log('Failed to start on interaction:', e);
-              audio.volume = targetVolume;
-            });
+            console.log('Starting on user interaction - reloading stream');
+            reloadStreamToLive();
+            startMonitoring();
           }
           document.removeEventListener('click', startOnInteraction);
           document.removeEventListener('touchstart', startOnInteraction);
@@ -1284,7 +1306,10 @@
       setAlbumCover(coverUrl, true);
       fetchMetadata();
       updateStats();
+      
+      // Try auto-play, but if it fails, set up interaction fallback
       forceAutoPlay();
+      setupInteractionFallback();
       
       // Only metadata updates run continuously
       setInterval(fetchMetadata, 4000);
