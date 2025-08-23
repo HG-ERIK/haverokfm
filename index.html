@@ -1100,7 +1100,7 @@
           
           setTimeout(() => {
             albumCoverEl.style.fontSize = '3rem';
-            albumCoverEl.textContent = "📻";
+            albumCoverEl.textContent = "❌";
             bgBlurEl.style.opacity = '0';
           }, 500);
         };
@@ -1111,8 +1111,8 @@
         try {
           const response = await fetch(metaUrl + '?cache=' + Date.now());
           const txt = await response.text();
-          let song = "Nincs duma (Csak zene)";
-          let artist = "HaverokFM";
+          let song = "could not load metadata";
+          let artist = "Sorry im working on it or not xd";
 
           try {
             const j = JSON.parse(txt);
@@ -1337,3 +1337,4 @@
   </script>
 </body>
 </html>
+
