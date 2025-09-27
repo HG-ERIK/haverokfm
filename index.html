@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Add viewport-fit=cover so safe-area insets work on iOS devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Internet Radio</title>
   <style>
@@ -13,8 +12,8 @@
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden;           /* no scrolling at all */
-      touch-action: none;         /* disable any touch‐drag/scroll */
+      overflow: hidden;
+      touch-action: none;
       background-color: #311B0B;
       color: #fff;
       font-family: 'Segoe UI', Arial, sans-serif;
@@ -25,10 +24,10 @@
     /* 2) Blurred background image            */
     #bg-blur {
       position: absolute;
-      inset: 0;                    /* top:0; right:0; bottom:0; left:0 */
+      inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;           /* cover the entire viewport */
+      object-fit: cover;
       object-position: center;
       filter: blur(25px) brightness(0.7);
       pointer-events: none;
@@ -37,13 +36,13 @@
     }
 
     /*----------------------------------------*/
-    /* 3) Header + Safe‐Area Handling         */
+    /* 3) Header + Safe-Area Handling         */
     #header {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      height: 56px;                /* room for status bar + icons */
+      height: 56px;
       pointer-events: none;
       z-index: 2;
     }
@@ -114,7 +113,7 @@
     }
 
     /*----------------------------------------*/
-    /* 5) Stats Panel (nerdy stats)           */
+    /* 5) Settings & Stats Panel              */
     #stats-panel {
       position: fixed;
       top: 0;
@@ -201,6 +200,36 @@
       background: rgba(255, 255, 255, 0.1);
     }
 
+    /* Buffer mode selector */
+    .buffer-selector {
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+    }
+    .buffer-option {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .buffer-option:hover {
+      opacity: 0.8;
+    }
+    .buffer-option input {
+      margin-right: 8px;
+    }
+    .buffer-option label {
+      cursor: pointer;
+      flex: 1;
+    }
+    .buffer-desc {
+      font-size: 0.75rem;
+      color: #888;
+      margin-left: 24px;
+    }
+
     /*----------------------------------------*/
     /* 6) Main content (centered, below header) */
     #main-content {
@@ -213,7 +242,7 @@
       justify-content: center;
       align-items: center;
       padding-top: calc(56px + env(safe-area-inset-top));
-      padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* More space for controls */
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
       box-sizing: border-box;
       text-align: center;
       z-index: 1;
@@ -226,7 +255,7 @@
       padding: 16px;
       box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
       display: inline-flex;
-      flex-direction: row;        /* default: side‐by‐side */
+      flex-direction: row;
       align-items: center;
       gap: 20px;
       max-width: calc(90vw - 32px);
@@ -390,7 +419,6 @@
     /*----------------------------------------*/
     /* 8) Portrait/mobile corrections          */
     @media only screen and (max-width: 600px) and (orientation: portrait) {
-      /* Stack cover + details vertically */
       #cover-card {
         flex-direction: column;
         align-items: center;
@@ -399,7 +427,6 @@
         text-align: center;
         margin-top: 12px;
       }
-      /* Tweak controls if desired */
       #controls {
         gap: 12px;
         padding: 8px 16px;
@@ -412,36 +439,18 @@
         right: -100vw;
         padding: 15px;
       }
-      #stats-panel h2 {
-        font-size: 1.1rem;
-        margin-bottom: 15px;
-      }
-      .stat-group {
-        margin-bottom: 15px;
-        padding: 8px;
-      }
-      .stat-item {
-        margin: 3px 0;
-        font-size: 0.8rem;
-      }
     }
 
-    /* IMPROVED LANDSCAPE MODE FOR PHONES */
     @media only screen and (max-width: 900px) and (orientation: landscape) {
-      /* Smaller album cover to prevent crushing */
       #album-cover {
         width: clamp(80px, 15vw, 120px) !important;
         height: clamp(80px, 15vw, 120px) !important;
       }
-      
-      /* Adjust cover card for better spacing */
       #cover-card {
         max-width: calc(100vw - 64px);
         padding: 12px 16px;
         gap: 16px;
       }
-      
-      /* Smaller text for landscape */
       #song-title {
         font-size: clamp(1.2rem, 3vw, 1.6rem);
         margin: 0 0 4px;
@@ -449,143 +458,14 @@
       #song-artist {
         font-size: clamp(0.9rem, 2.5vw, 1.1rem);
       }
-      
-      /* Adjust main content padding */
-      #main-content {
-        padding-top: calc(56px + env(safe-area-inset-top));
-        padding-bottom: calc(70px + env(safe-area-inset-bottom));
-      }
-      
-      /* Compact controls for landscape */
-      #controls {
-        bottom: calc(12px + env(safe-area-inset-bottom));
-        gap: 10px;
-        padding: 6px 12px;
-      }
-      #play-btn {
-        width: 40px;
-        height: 40px;
-      }
-      #play-btn svg {
-        width: 18px;
-        height: 18px;
-      }
-      #volume-slider {
-        width: clamp(60px, 15vw, 100px);
-      }
-      
-      /* MUCH SMALLER STATS PANEL FOR LANDSCAPE */
       #stats-panel {
         width: 280px;
         right: -280px;
         padding: 12px;
         font-size: 0.75rem;
       }
-      #stats-panel h2 {
-        font-size: 1rem;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-      }
-      .stat-group {
-        margin-bottom: 12px;
-        padding: 6px 8px;
-      }
-      .stat-group h3 {
-        font-size: 0.9rem;
-        margin-bottom: 6px;
-      }
-      .stat-item {
-        margin: 2px 0;
-        font-size: 0.75rem;
-      }
-      .stat-label {
-        font-size: 0.7rem;
-      }
-      .stat-value {
-        font-size: 0.75rem;
-      }
-      #close-stats {
-        width: 25px;
-        height: 25px;
-        font-size: 1.2rem;
-        top: 10px;
-        right: 10px;
-      }
-      
-      /* Make stats panel semi-transparent so content shows through */
-      #stats-panel.active {
-        background: rgba(0, 0, 0, 0.85);
-      }
     }
 
-    /* Extra small landscape phones (like when Galaxy Fold is closed) */
-    @media only screen and (max-width: 600px) and (orientation: landscape) and (max-height: 400px) {
-      #album-cover {
-        width: 70px !important;
-        height: 70px !important;
-        font-size: 2rem;
-      }
-      #cover-card {
-        padding: 8px 12px;
-        gap: 12px;
-      }
-      #song-title {
-        font-size: 1rem;
-      }
-      #song-artist {
-        font-size: 0.8rem;
-      }
-      #controls {
-        padding: 4px 8px;
-        gap: 8px;
-      }
-      #play-btn {
-        width: 36px;
-        height: 36px;
-      }
-      #volume-slider {
-        width: 60px;
-      }
-      
-      /* TINY STATS PANEL FOR VERY SMALL LANDSCAPE */
-      #stats-panel {
-        width: 240px;
-        right: -240px;
-        padding: 8px;
-        font-size: 0.7rem;
-      }
-      #stats-panel h2 {
-        font-size: 0.9rem;
-        margin-bottom: 8px;
-      }
-      .stat-group {
-        margin-bottom: 8px;
-        padding: 4px 6px;
-      }
-      .stat-group h3 {
-        font-size: 0.8rem;
-        margin-bottom: 4px;
-      }
-      .stat-item {
-        margin: 1px 0;
-        font-size: 0.65rem;
-      }
-      .stat-label {
-        font-size: 0.6rem;
-      }
-      .stat-value {
-        font-size: 0.65rem;
-      }
-      #close-stats {
-        width: 20px;
-        height: 20px;
-        font-size: 1rem;
-        top: 5px;
-        right: 5px;
-      }
-    }
-
-    /* Fade-in animation for menu popup */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
@@ -596,7 +476,7 @@
   <!-- 1) Blurred background -->
   <img id="bg-blur" src="" alt="Background Cover">
 
-  <!-- 2) Header: logo (left) + menu button + stats button (right) -->
+  <!-- 2) Header -->
   <div id="header">
     <div id="logo">HaverokFM</div>
     <button id="menu-btn" aria-label="Open menu">&#9776;</button>
@@ -607,56 +487,55 @@
     </div>
   </div>
 
-  <!-- Stats Panel -->
+  <!-- Settings & Stats Panel -->
   <div id="stats-panel">
     <button id="close-stats">×</button>
-    <h2>📊 FAST RECONNECT</h2>
+    <h2>⚙️ SETTINGS & STATS</h2>
     
     <div class="stat-group">
-      <h3>🌐 Connection Monitor</h3>
-      <div class="stat-item">
-        <span class="stat-label">Monitoring:</span>
-        <span class="stat-value" id="monitoring-active">No</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">DNS Status:</span>
-        <span class="stat-value" id="dns-status">Not tested</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Ping Failures:</span>
-        <span class="stat-value" id="ping-failures">0</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Fast Reconnects:</span>
-        <span class="stat-value" id="reconnect-count">0</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Stream Reloads:</span>
-        <span class="stat-value" id="reload-count">0</span>
+      <h3>🎚️ Buffer Mode</h3>
+      <div class="buffer-selector">
+        <div class="buffer-option">
+          <input type="radio" id="buffer-low" name="buffer" value="low">
+          <label for="buffer-low">Low Latency (Live)</label>
+        </div>
+        <div class="buffer-desc">Minimal delay, needs good connection</div>
+        
+        <div class="buffer-option">
+          <input type="radio" id="buffer-balanced" name="buffer" value="balanced" checked>
+          <label for="buffer-balanced">Balanced (Auto)</label>
+        </div>
+        <div class="buffer-desc">Adapts to your connection</div>
+        
+        <div class="buffer-option">
+          <input type="radio" id="buffer-stable" name="buffer" value="stable">
+          <label for="buffer-stable">Stable (Buffered)</label>
+        </div>
+        <div class="buffer-desc">More delay but works on poor connections</div>
       </div>
     </div>
     
     <div class="stat-group">
-      <h3>🎵 Audio Stream</h3>
+      <h3>📊 Stream Stats</h3>
       <div class="stat-item">
-        <span class="stat-label">Stream Status:</span>
+        <span class="stat-label">Status:</span>
         <span class="stat-value" id="stream-status">Stopped</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Audio Progress:</span>
-        <span class="stat-value" id="audio-progress">0.0s</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Volume Level:</span>
-        <span class="stat-value" id="volume-level">100%</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Buffer Length:</span>
+        <span class="stat-label">Buffer:</span>
         <span class="stat-value" id="buffer-length">0.0s</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Last Stall:</span>
-        <span class="stat-value" id="last-stall">Never</span>
+        <span class="stat-label">Position:</span>
+        <span class="stat-value" id="audio-progress">0.0s</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Volume:</span>
+        <span class="stat-value" id="volume-level">100%</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Reconnects:</span>
+        <span class="stat-value" id="reconnect-count">0</span>
       </div>
     </div>
   </div>
@@ -664,7 +543,7 @@
   <!-- Status indicator -->
   <div id="status-indicator"></div>
 
-  <!-- 3) Main content (centered, pushed below header) -->
+  <!-- 3) Main content -->
   <div id="main-content">
     <div id="cover-card">
       <div id="album-cover">📻</div>
@@ -675,7 +554,7 @@
     </div>
   </div>
 
-  <!-- 4) Bottom controls (play/pause + volume) -->
+  <!-- 4) Bottom controls -->
   <div id="controls">
     <button id="play-btn" aria-label="Play/Pause">
       <svg id="play-icon" viewBox="0 0 64 64">
@@ -687,8 +566,6 @@
       </svg>
     </button>
     <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="1">
-    
-    <!-- Single audio element -->
     <audio id="audio" preload="auto"></audio>
   </div>
 
@@ -713,331 +590,48 @@
       const coverUrl = "https://erik-server.ddns.net/image";
       const metaUrl  = "https://erik-server.ddns.net/metadata";
       const streamUrl = "https://erik-server.ddns.net/stream";
-      const statusUrl = "https://erik-server.ddns.net/status";
       
-      // Simple state management
+      // State
       let isPlaying = false;
-      let shouldBePlayingState = false;
-      let monitoringActive = false;
       let reconnectCount = 0;
-      let reloadCount = 0; // New counter for stream reloads
-      let pingFailures = 0;
-      let lastAudioProgress = 0;
-      let dnsStatus = 'Not tested';
-      let lastStallTime = null;
-      let targetVolume = 1; // Remember target volume for fading
-      let isReconnecting = false; // Prevent multiple reconnects
-      let reconnectAttempts = 0; // Track consecutive reconnect attempts
-      
-      // Intervals
-      let connectionCheckInterval = null;
+      let bufferMode = 'balanced';
+      let reconnectTimer = null;
       let progressCheckInterval = null;
-
-      // Metadata management
+      let lastProgressTime = 0;
+      let stallCount = 0;
+      
+      // Metadata
       let lastSongData = { title: '', artist: '' };
-      let lastCoverHash = '';
+      let currentCoverUrl = '';
 
-      // Set initial audio properties
+      // Buffer settings (in seconds)
+      const bufferSettings = {
+        low: { target: 0.5, max: 2, checkInterval: 3000 },
+        balanced: { target: 3, max: 10, checkInterval: 5000 },
+        stable: { target: 10, max: 30, checkInterval: 10000 }
+      };
+
+      // Initialize audio
       audio.src = streamUrl;
       audio.crossOrigin = "anonymous";
-      audio.preload = "auto";
       audio.volume = volumeSlider.value;
-      targetVolume = volumeSlider.value;
 
-      // DNS ping to check connection
-      function pingDNS() {
-        const startTime = Date.now();
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1000);
-        
-        fetch('https://dns.google/resolve?name=google.com&type=A', {
-          method: 'GET',
-          signal: controller.signal,
-          cache: 'no-cache'
-        }).then(response => {
-          clearTimeout(timeoutId);
-          if (response.ok) {
-            dnsStatus = 'Online (' + (Date.now() - startTime) + 'ms)';
-          } else {
-            dnsStatus = 'DNS Error';
-            handleConnectionFailure();
+      // Buffer mode handling
+      document.querySelectorAll('input[name="buffer"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          bufferMode = e.target.value;
+          console.log('Buffer mode changed to:', bufferMode);
+          
+          // If playing, restart with new buffer settings
+          if (isPlaying) {
+            showStatus('Applying buffer settings...', 'buffering');
+            restartStream();
           }
-          updateStats();
-        }).catch(error => {
-          clearTimeout(timeoutId);
-          if (error.name === 'AbortError') {
-            dnsStatus = 'Timeout (>1000ms)';
-          } else {
-            dnsStatus = 'DNS Failed';
-          }
-          handleConnectionFailure();
-          updateStats();
         });
-      }
+      });
 
-      function handleConnectionFailure() {
-        pingFailures++;
-        console.log('Connection failed, ping failures:', pingFailures);
-        
-        // If audio is playing and we detect connection issues
-        if (shouldBePlayingState && isPlaying) {
-          // Check if audio is actually progressing immediately
-          setTimeout(() => checkAudioProgress(), 500); // Check faster
-        }
-      }
-
-      function checkAudioProgress() {
-        if (!shouldBePlayingState || audio.paused || isReconnecting) return;
-        
-        const currentProgress = audio.currentTime;
-        const hasProgressed = Math.abs(currentProgress - lastAudioProgress) > 0.05; // More sensitive detection
-        
-        if (hasProgressed) {
-          lastAudioProgress = currentProgress;
-          reconnectAttempts = 0; // Reset attempts when audio is working
-        } else {
-          // Audio not progressing - ultra-fast reconnect
-          console.log('Audio stopped progressing, ultra-fast reconnecting...');
-          fastReconnect();
-        }
-        
-        updateStats();
-      }
-
-      function fastReconnect() {
-        // Prevent multiple reconnects running at same time
-        if (isReconnecting) {
-          console.log('Reconnect already in progress, skipping...');
-          return;
-        }
-        
-        isReconnecting = true;
-        reconnectCount++;
-        reconnectAttempts++;
-        lastStallTime = Date.now();
-        
-        console.log(`Starting ultra-fast reconnect #${reconnectAttempts}...`);
-        showStatus('Reconnecting...', 'reconnecting');
-        
-        // If too many attempts, wait longer before trying
-        if (reconnectAttempts > 3) {
-          console.log('Multiple reconnect attempts, waiting longer...');
-          setTimeout(() => {
-            doReconnect();
-          }, 2000);
-        } else {
-          doReconnect();
-        }
-      }
-      
-      function doReconnect() {
-        // Stop and reload the stream
-        audio.pause();
-        audio.currentTime = 0;
-        audio.load();
-        
-        // Try to start playing again
-        audio.play().then(() => {
-          console.log('Ultra-fast reconnect successful');
-          isReconnecting = false;
-          reconnectAttempts = 0; // Reset attempts on success
-          showStatus('Reconnected!', 'connected');
-          
-          // Jump to live after a moment
-          setTimeout(() => jumpToLive(), 1000);
-          
-        }).catch(e => {
-          console.error('Reconnect failed:', e);
-          showStatus('Reconnect failed, retrying...', 'error');
-          
-          // Allow another reconnect attempt after delay
-          setTimeout(() => {
-            isReconnecting = false;
-            if (shouldBePlayingState && reconnectAttempts < 5) {
-              fastReconnect();
-            } else if (reconnectAttempts >= 5) {
-              console.log('Too many reconnect attempts, stopping...');
-              showStatus('Connection problems, please try again', 'error');
-              reconnectAttempts = 0;
-              isReconnecting = false;
-            }
-          }, reconnectAttempts * 1000); // Exponential backoff
-        });
-      }
-
-      // NEW FUNCTION: Force reload stream to get latest content
-      function reloadStreamToLive() {
-        console.log('Reloading stream to get latest content...');
-        reloadCount++;
-        showStatus('Loading live stream...', 'reconnecting');
-        
-        // Stop current playback
-        audio.pause();
-        audio.currentTime = 0;
-        
-        // Force reload by adding cache-busting parameter
-        const cacheBuster = '?t=' + Date.now();
-        audio.src = streamUrl + cacheBuster;
-        audio.load();
-        
-        // Start playing the fresh stream
-        audio.play().then(() => {
-          console.log('Stream reloaded successfully, now live!');
-          showStatus('Live stream loaded!', 'connected');
-          
-          // No need to jump to live since we're loading fresh
-          // But we can still do it after a short delay to ensure we're at the very edge
-          setTimeout(() => jumpToLive(), 500);
-          
-        }).catch(e => {
-          console.error('Stream reload failed:', e);
-          showStatus('Failed to load live stream', 'error');
-          
-          // Fallback to regular stream URL
-          audio.src = streamUrl;
-          audio.load();
-          audio.play().catch(err => {
-            console.error('Fallback also failed:', err);
-          });
-        });
-        
-        updateStats();
-      }
-
-      function fadeOut(callback) {
-        const startVolume = audio.volume;
-        const fadeTime = 300; // 300ms fade out
-        const steps = 15;
-        const volumeStep = startVolume / steps;
-        const timeStep = fadeTime / steps;
-        
-        let currentStep = 0;
-        const fadeInterval = setInterval(() => {
-          currentStep++;
-          audio.volume = Math.max(0, startVolume - (volumeStep * currentStep));
-          
-          if (currentStep >= steps) {
-            clearInterval(fadeInterval);
-            audio.volume = 0;
-            if (callback) callback();
-          }
-        }, timeStep);
-      }
-
-      function fadeIn() {
-        const fadeTime = 400; // 400ms fade in
-        const steps = 20;
-        const volumeStep = targetVolume / steps;
-        const timeStep = fadeTime / steps;
-        
-        audio.volume = 0;
-        let currentStep = 0;
-        
-        const fadeInterval = setInterval(() => {
-          currentStep++;
-          audio.volume = Math.min(targetVolume, volumeStep * currentStep);
-          
-          if (currentStep >= steps) {
-            clearInterval(fadeInterval);
-            audio.volume = targetVolume;
-          }
-        }, timeStep);
-      }
-
-      function jumpToLive() {
-        if (!audio.buffered.length) {
-          console.log('No buffer yet, will try jump to live again...');
-          setTimeout(() => jumpToLive(), 1000);
-          return;
-        }
-        
-        try {
-          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-          const currentTime = audio.currentTime;
-          
-          // Force jump to the very end of the buffer (live edge)
-          const livePosition = bufferedEnd - 0.5; // Just 0.5 seconds from live edge
-          
-          console.log(`Jumping to live: current=${currentTime.toFixed(1)}s, buffer=${bufferedEnd.toFixed(1)}s, jumping to=${livePosition.toFixed(1)}s`);
-          
-          if (livePosition > currentTime) {
-            audio.currentTime = livePosition;
-            console.log('Jumped to live stream position');
-          } else {
-            console.log('Already at live position');
-          }
-        } catch (e) {
-          console.error('Jump to live failed:', e);
-          // Try again in a moment
-          setTimeout(() => jumpToLive(), 1000);
-        }
-      }
-
-      function startMonitoring() {
-        if (monitoringActive) return;
-        
-        console.log('Starting connection monitoring...');
-        monitoringActive = true;
-        
-        // Start DNS ping every 500ms
-        connectionCheckInterval = setInterval(() => {
-          pingDNS();
-        }, 500);
-        
-        // Start audio progress checking every 500ms (faster detection)
-        progressCheckInterval = setInterval(() => {
-          checkAudioProgress();
-        }, 500);
-        
-        updateStats();
-      }
-
-      function stopMonitoring() {
-        console.log('Stopping connection monitoring...');
-        monitoringActive = false;
-        
-        if (connectionCheckInterval) {
-          clearInterval(connectionCheckInterval);
-          connectionCheckInterval = null;
-        }
-        
-        if (progressCheckInterval) {
-          clearInterval(progressCheckInterval);
-          progressCheckInterval = null;
-        }
-        
-        updateStats();
-      }
-
-      function updateStats() {
-        document.getElementById('monitoring-active').textContent = monitoringActive ? 'Yes' : 'No';
-        document.getElementById('monitoring-active').className = 'stat-value ' + (monitoringActive ? '' : 'warning');
-        
-        document.getElementById('dns-status').textContent = dnsStatus;
-        document.getElementById('dns-status').className = 'stat-value ' + (dnsStatus.includes('Online') ? '' : 'error');
-        
-        document.getElementById('ping-failures').textContent = pingFailures;
-        document.getElementById('reconnect-count').textContent = reconnectCount;
-        document.getElementById('reload-count').textContent = reloadCount; // New stat
-        
-        document.getElementById('stream-status').textContent = !audio.paused ? 'Playing' : 'Stopped';
-        document.getElementById('audio-progress').textContent = lastAudioProgress.toFixed(1) + 's';
-        document.getElementById('volume-level').textContent = Math.round(audio.volume * 100) + '%';
-        
-        // Buffer stats
-        if (audio.buffered.length > 0) {
-          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-          const bufferLength = bufferedEnd - audio.currentTime;
-          document.getElementById('buffer-length').textContent = bufferLength.toFixed(1) + 's';
-        } else {
-          document.getElementById('buffer-length').textContent = '0.0s';
-        }
-        
-        if (lastStallTime) {
-          const stallAgo = Math.floor((Date.now() - lastStallTime) / 1000);
-          document.getElementById('last-stall').textContent = stallAgo + 's ago';
-        }
+      function getBufferSettings() {
+        return bufferSettings[bufferMode];
       }
 
       function showStatus(message, type = '') {
@@ -1048,72 +642,76 @@
         }, 3000);
       }
 
-      function setAlbumCover(src, forceUpdate = false) {
-        if (!albumCoverEl || !bgBlurEl) return;
+      function updateStats() {
+        document.getElementById('stream-status').textContent = isPlaying ? 'Playing' : 'Stopped';
+        document.getElementById('volume-level').textContent = Math.round(audio.volume * 100) + '%';
+        document.getElementById('audio-progress').textContent = audio.currentTime.toFixed(1) + 's';
+        document.getElementById('reconnect-count').textContent = reconnectCount;
         
-        const currentHash = Date.now().toString();
-        if (!forceUpdate && lastCoverHash === currentHash) return;
+        if (audio.buffered.length > 0) {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+          const bufferLength = bufferedEnd - audio.currentTime;
+          document.getElementById('buffer-length').textContent = bufferLength.toFixed(1) + 's';
+          
+          // Color code buffer status
+          const bufferEl = document.getElementById('buffer-length');
+          const settings = getBufferSettings();
+          if (bufferLength < settings.target) {
+            bufferEl.className = 'stat-value warning';
+          } else if (bufferLength > settings.max) {
+            bufferEl.className = 'stat-value error';
+          } else {
+            bufferEl.className = 'stat-value';
+          }
+        } else {
+          document.getElementById('buffer-length').textContent = '0.0s';
+        }
+      }
+
+      function setAlbumCover(url) {
+        // Only update if URL actually changed
+        if (currentCoverUrl === url) return;
+        currentCoverUrl = url;
         
         const img = new Image();
         img.crossOrigin = "anonymous";
+        
         img.onload = () => {
+          // Clear old images
           const existingImages = albumCoverEl.querySelectorAll('img');
+          existingImages.forEach(oldImg => {
+            oldImg.style.opacity = "0";
+            setTimeout(() => oldImg.remove(), 500);
+          });
           
+          // Add new image
           const newImg = img.cloneNode();
-          newImg.style.width = "100%";
-          newImg.style.height = "100%";
-          newImg.style.objectFit = "cover";
-          newImg.style.borderRadius = "12px";
-          newImg.style.opacity = "0";
-          newImg.style.transition = "opacity 0.5s ease";
-          
+          newImg.className = 'visible';
           albumCoverEl.appendChild(newImg);
           albumCoverEl.style.fontSize = '0';
           
-          setTimeout(() => {
-            newImg.style.opacity = "1";
-          }, 50);
-          
-          existingImages.forEach(oldImg => {
-            oldImg.style.opacity = "0";
-            setTimeout(() => {
-              if (oldImg.parentNode) oldImg.remove();
-            }, 500);
-          });
-          
-          bgBlurEl.style.opacity = '0.5';
-          setTimeout(() => {
-            bgBlurEl.src = src + '?cache=' + currentHash;
-            bgBlurEl.style.opacity = '1';
-          }, 250);
-          
-          lastCoverHash = currentHash;
+          // Update background
+          bgBlurEl.src = url;
+          bgBlurEl.style.opacity = '1';
         };
+        
         img.onerror = () => {
-          const existingImages = albumCoverEl.querySelectorAll('img');
-          existingImages.forEach(img => {
-            img.style.opacity = "0";
-            setTimeout(() => {
-              if (img.parentNode) img.remove();
-            }, 500);
-          });
-          
-          setTimeout(() => {
-            albumCoverEl.style.fontSize = '3rem';
-            albumCoverEl.textContent = "❌";
-            bgBlurEl.style.opacity = '0';
-          }, 500);
+          albumCoverEl.innerHTML = '📻';
+          albumCoverEl.style.fontSize = '3rem';
+          bgBlurEl.style.opacity = '0';
         };
-        img.src = src + '?cache=' + currentHash;
+        
+        img.src = url;
       }
 
       async function fetchMetadata() {
         try {
-          const response = await fetch(metaUrl + '?cache=' + Date.now());
+          const response = await fetch(metaUrl);
           const txt = await response.text();
-          let song = "could not load metadata";
-          let artist = "Sorry im working on it or not xd";
+          let song = "Unknown";
+          let artist = "Unknown";
 
+          // Parse metadata (same logic as before)
           try {
             const j = JSON.parse(txt);
             if (j.artist && j.title) {
@@ -1131,67 +729,152 @@
               const parts = txt.split("#");
               artist = parts[0].trim();
               song = parts[1].trim();
-            } else if (txt.trim() && txt.trim() !== '') {
-              const parts = txt.trim().split(/\s+/);
-              artist = parts.shift();
-              song = parts.join(' ') || txt.trim();
             }
           }
 
-          const currentSongData = { title: song, artist: artist };
-          const songChanged = (
-            lastSongData.title !== currentSongData.title || 
-            lastSongData.artist !== currentSongData.artist
-          );
-
-          if (songChanged) {
+          // Check if song changed
+          if (lastSongData.title !== song || lastSongData.artist !== artist) {
+            lastSongData = { title: song, artist: artist };
+            
             const displaySong = song.replace(/\s*\(/g, "<br>(");
             songTitleEl.innerHTML = `<b>${displaySong}</b>`;
             songArtistEl.textContent = artist;
 
-            setAlbumCover(coverUrl, true);
+            // Update cover with cache buster for new song
+            setAlbumCover(coverUrl + '?t=' + Date.now());
 
             if ("mediaSession" in navigator) {
               navigator.mediaSession.metadata = new MediaMetadata({
                 title: song,
                 artist: artist,
-                album: "",
-                artwork: [
-                  {
-                    src: coverUrl + '?cache=' + Date.now(),
-                    sizes: '512x512',
-                    type: 'image/png'
-                  }
-                ]
+                artwork: [{
+                  src: currentCoverUrl,
+                  sizes: '512x512',
+                  type: 'image/png'
+                }]
               });
             }
-
-            lastSongData = currentSongData;
           }
         } catch (e) {
           console.error('Metadata fetch error:', e);
         }
       }
 
+      function checkProgress() {
+        if (!isPlaying || audio.paused) return;
+        
+        const currentTime = audio.currentTime;
+        
+        // Check if audio is progressing
+        if (Math.abs(currentTime - lastProgressTime) < 0.1) {
+          stallCount++;
+          console.log('Audio stalled, count:', stallCount);
+          
+          // Only reconnect after multiple stalls
+          if (stallCount > 3) {
+            console.log('Multiple stalls detected, reconnecting...');
+            reconnect();
+            stallCount = 0;
+          }
+        } else {
+          stallCount = 0;
+        }
+        
+        lastProgressTime = currentTime;
+        
+        // Adjust buffer if needed
+        const settings = getBufferSettings();
+        if (audio.buffered.length > 0) {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+          const bufferLength = bufferedEnd - audio.currentTime;
+          
+          // Jump forward if buffer too large (only in low latency mode)
+          if (bufferMode === 'low' && bufferLength > settings.max) {
+            audio.currentTime = bufferedEnd - settings.target;
+            console.log('Jumped to live position');
+          }
+        }
+      }
+
+      function reconnect() {
+        if (reconnectTimer) return; // Already reconnecting
+        
+        reconnectCount++;
+        showStatus('Reconnecting...', 'reconnecting');
+        
+        // Clear existing stream
+        audio.pause();
+        audio.currentTime = 0;
+        
+        // Wait a bit then try again
+        reconnectTimer = setTimeout(() => {
+          audio.load();
+          audio.play().then(() => {
+            showStatus('Reconnected!', 'connected');
+            console.log('Reconnect successful');
+          }).catch(e => {
+            console.error('Reconnect failed:', e);
+            showStatus('Connection failed', 'error');
+          });
+          reconnectTimer = null;
+        }, 2000);
+      }
+
+      function restartStream() {
+        // Stop current stream
+        if (progressCheckInterval) {
+          clearInterval(progressCheckInterval);
+        }
+        
+        audio.pause();
+        audio.currentTime = 0;
+        audio.load();
+        
+        // Start with new settings
+        const settings = getBufferSettings();
+        
+        audio.play().then(() => {
+          console.log('Stream restarted with buffer mode:', bufferMode);
+          progressCheckInterval = setInterval(checkProgress, settings.checkInterval);
+        }).catch(e => {
+          console.error('Restart failed:', e);
+        });
+      }
+
       function togglePlay() {
         if (audio.paused) {
-          shouldBePlayingState = true;
+          // Start playing
+          showStatus('Starting stream...', 'buffering');
+          isPlaying = true;
           
-          // IMPORTANT: Always reload stream when resuming to get latest content
-          console.log('Play button pressed - reloading stream to get latest content');
-          reloadStreamToLive();
-          startMonitoring();
+          const settings = getBufferSettings();
           
-        } else {
-          shouldBePlayingState = false;
-          
-          // Fade out when stopping
-          fadeOut(() => {
-            audio.pause();
-            audio.volume = targetVolume; // Reset volume for next play
-            console.log('Audio paused, stopping monitoring...');
-            stopMonitoring();
+          audio.play().then(() => {
+            console.log('Playback started');
+            showStatus('Connected', 'connected');
+            
+            // Start progress checking
+            if (progressCheckInterval) {
+              clearInterval(progressCheckInterval);
+            }
+            progressCheckInterval = setInterval(checkProgress, settings.checkInterval);
+            
+          }).catch(e => {
+            console.error('Play failed:', e);
+            showStatus('Failed to start', 'error');
+            isPlaying = false;
           });
+        } else {
+          // Stop playing
+          isPlaying = false;
+          audio.pause();
+          
+          if (progressCheckInterval) {
+            clearInterval(progressCheckInterval);
+            progressCheckInterval = null;
+          }
+          
+          console.log('Playback stopped');
         }
       }
 
@@ -1200,9 +883,6 @@
         playIcon.style.display = 'none';
         pauseIcon.style.display = 'block';
         isPlaying = true;
-        
-        // Fade in when starting to play
-        fadeIn();
         
         if ("mediaSession" in navigator) {
           navigator.mediaSession.playbackState = "playing";
@@ -1221,28 +901,37 @@
 
       audio.addEventListener('error', (e) => {
         console.error('Audio error:', e);
-        if (shouldBePlayingState) {
-          showStatus('Stream error, reconnecting...', 'error');
-          fastReconnect();
+        if (isPlaying) {
+          showStatus('Stream error', 'error');
+          setTimeout(() => reconnect(), 2000);
         }
       });
 
       audio.addEventListener('waiting', () => {
-        showStatus('Buffering...', 'buffering');
+        if (isPlaying) {
+          showStatus('Buffering...', 'buffering');
+        }
+      });
+
+      audio.addEventListener('canplay', () => {
+        if (isPlaying) {
+          showStatus('Ready', 'connected');
+        }
       });
 
       audio.addEventListener('stalled', () => {
-        console.log('Audio stalled');
-        if (shouldBePlayingState) {
-          setTimeout(() => checkAudioProgress(), 2000);
+        console.log('Stream stalled');
+        if (isPlaying) {
+          stallCount++;
         }
       });
 
       // Control event listeners
       playBtn.addEventListener('click', togglePlay);
+      
       volumeSlider.addEventListener('input', e => {
-        targetVolume = parseFloat(e.target.value);
-        audio.volume = targetVolume;
+        audio.volume = parseFloat(e.target.value);
+        updateStats();
       });
 
       // Stats panel controls
@@ -1255,66 +944,6 @@
         statsPanel.classList.remove('active');
       });
 
-      // Media Session handlers
-      if ("mediaSession" in navigator) {
-        navigator.mediaSession.setActionHandler('play', () => {
-          shouldBePlayingState = true;
-          console.log('Media session play - reloading stream');
-          reloadStreamToLive();
-          startMonitoring();
-        });
-        
-        navigator.mediaSession.setActionHandler('pause', () => {
-          shouldBePlayingState = false;
-          fadeOut(() => {
-            audio.pause();
-            audio.volume = targetVolume;
-            stopMonitoring();
-          });
-        });
-      }
-
-      // Auto-start functionality
-      function forceAutoPlay() {
-        shouldBePlayingState = true;
-        
-        setTimeout(() => {
-          console.log('Auto-play starting - loading fresh stream');
-          reloadStreamToLive();
-          startMonitoring();
-        }, 100);
-      }
-      
-      function setupInteractionFallback() {
-        const startOnInteraction = (e) => {
-          if (!isPlaying && shouldBePlayingState) {
-            console.log('Starting on user interaction - reloading stream');
-            reloadStreamToLive();
-            startMonitoring();
-          }
-          document.removeEventListener('click', startOnInteraction);
-          document.removeEventListener('touchstart', startOnInteraction);
-          document.removeEventListener('keydown', startOnInteraction);
-        };
-        
-        document.addEventListener('click', startOnInteraction);
-        document.addEventListener('touchstart', startOnInteraction);
-        document.addEventListener('keydown', startOnInteraction);
-      }
-
-      // Initialize
-      setAlbumCover(coverUrl, true);
-      fetchMetadata();
-      updateStats();
-      
-      // Try auto-play, but if it fails, set up interaction fallback
-      forceAutoPlay();
-      setupInteractionFallback();
-      
-      // Only metadata updates run continuously
-      setInterval(fetchMetadata, 4000);
-      setInterval(updateStats, 1000);
-
       // Menu functionality
       menuBtn.addEventListener('click', e => {
         menuPopup.classList.toggle('active');
@@ -1322,6 +951,7 @@
         e.stopPropagation();
       });
       
+      // Close popups when clicking outside
       window.addEventListener('click', (e) => {
         if (!statsPanel.contains(e.target) && !statsBtn.contains(e.target)) {
           statsPanel.classList.remove('active');
@@ -1333,8 +963,58 @@
       
       menuPopup.addEventListener('click', e => e.stopPropagation());
       statsPanel.addEventListener('click', e => e.stopPropagation());
+
+      // Media Session handlers
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.setActionHandler('play', () => {
+          if (audio.paused) {
+            togglePlay();
+          }
+        });
+        
+        navigator.mediaSession.setActionHandler('pause', () => {
+          if (!audio.paused) {
+            togglePlay();
+          }
+        });
+      }
+
+      // Auto-start with user interaction fallback
+      function tryAutoStart() {
+        audio.play().then(() => {
+          console.log('Auto-play successful');
+          isPlaying = true;
+          const settings = getBufferSettings();
+          progressCheckInterval = setInterval(checkProgress, settings.checkInterval);
+        }).catch(e => {
+          console.log('Auto-play blocked, waiting for user interaction');
+          
+          // Setup one-time interaction handler
+          const startOnInteraction = () => {
+            if (!isPlaying) {
+              togglePlay();
+            }
+            document.removeEventListener('click', startOnInteraction);
+            document.removeEventListener('touchstart', startOnInteraction);
+          };
+          
+          document.addEventListener('click', startOnInteraction);
+          document.addEventListener('touchstart', startOnInteraction);
+        });
+      }
+
+      // Initialize
+      setAlbumCover(coverUrl);
+      fetchMetadata();
+      updateStats();
+      
+      // Try auto-start
+      tryAutoStart();
+      
+      // Update intervals
+      setInterval(fetchMetadata, 5000); // Check metadata every 5 seconds
+      setInterval(updateStats, 1000);   // Update stats every second
     });
   </script>
 </body>
 </html>
-
