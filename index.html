@@ -1,9 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hu">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>HaverokFM</title>
+  <meta name="description" content="Haverok FM - Mindenféle zenék a 80-as évektől teljesen mostanáig. Internet rádió by haverok for haverok.">
+  <meta name="keywords" content="HaverokFM, haverokfm, Haverokfm, haverok fm, Haverok FM, HAVEROKFM, haverok FM, Haverok fm, rádió, internet radio, zene, magyar rádió, online rádió">
+  <meta name="author" content="Erik">
+  <meta name="theme-color" content="#311B0B">
+  
+  <!-- Open Graph / Facebook / Discord -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="HaverokFM - Internet Rádió">
+  <meta property="og:description" content="Mindenféle zenék a 80-as évektől teljesen mostanáig. By haverok for haverok.">
+  <meta property="og:image" content="https://erik-server.ddns.net/image">
+  <meta property="og:url" content="https://erik-server.ddns.net">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="HaverokFM - Internet Rádió">
+  <meta name="twitter:description" content="Mindenféle zenék a 80-as évektől teljesen mostanáig.">
+  <meta name="twitter:image" content="https://erik-server.ddns.net/image">
+  
+  <!-- Apple -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HaverokFM">
+  
+  <title>HaverokFM - Internet Rádió</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20 70 A40 40 0 0 1 20 30' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/><path d='M32 62 A25 25 0 0 1 32 38' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/><path d='M44 54 A10 10 0 0 1 44 46' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/><path d='M80 70 A40 40 0 0 0 80 30' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/><path d='M68 62 A25 25 0 0 0 68 38' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/><path d='M56 54 A10 10 0 0 0 56 46' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/></svg>">
   <style>
     /*----------------------------------------*/
     /* 1) Prevent all scrolling/overflow       */
@@ -12,12 +36,17 @@
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden;
-      touch-action: none;
+      overflow: auto;
+      touch-action: pan-y;
       background-color: #311B0B;
       color: #fff;
       font-family: 'Segoe UI', Arial, sans-serif;
       box-sizing: border-box;
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    body.stats-open {
+      transform: translateX(-280px);
+      overflow: hidden;
     }
 
     /*----------------------------------------*/
@@ -57,177 +86,233 @@
       user-select: none;
       color: #fff;
     }
-    #menu-btn {
+
+    /* info (About) button */
+    #info-btn {
       position: absolute;
-      top: calc(16px + env(safe-area-inset-top));
+      top: calc(12px + env(safe-area-inset-top));
       right: calc(64px + env(safe-area-inset-right));
-      font-size: 1.5rem;
-      background: none;
-      border: none;
+      height: 40px;
+      min-width: 40px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
       color: #fff;
       cursor: pointer;
       outline: none;
       pointer-events: auto;
       user-select: none;
+      transition: background 0.15s ease, transform 0.08s ease;
     }
-    #stats-btn {
-      position: absolute;
-      top: calc(16px + env(safe-area-inset-top));
-      right: calc(16px + env(safe-area-inset-right));
-      font-size: 1.2rem;
-      background: none;
-      border: none;
-      color: #fff;
-      cursor: pointer;
-      outline: none;
-      pointer-events: auto;
-      user-select: none;
-      padding: 4px;
+    #info-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    #info-btn:active {
+      transform: scale(0.98);
+    }
+    #info-btn svg {
+      width: 20px;
+      height: 20px;
     }
 
-    /*----------------------------------------*/
-    /* 4) Menu Popup (below the button)       */
-    #menu-popup {
-      display: none;
-      position: absolute;
-      top: calc(56px + env(safe-area-inset-top));
-      right: calc(64px + env(safe-area-inset-right));
-      min-width: 180px;
-      background: rgba(255, 255, 255, 0.96);
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-      padding: 12px 16px;
-      font-size: 1rem;
-      color: #222;
-      max-width: calc(100vw - 32px);
-      z-index: 1000;
-      animation: fadeIn 0.2s ease-out;
-    }
-    #menu-popup.active {
-      display: block;
-    }
-    #menu-popup h3 {
-      margin: 0 0 8px;
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-
-    /*----------------------------------------*/
-    /* 5) Settings & Stats Panel              */
+    /* Modern stats panel */
     #stats-panel {
       position: fixed;
       top: 0;
-      right: -400px;
-      width: 350px;
+      right: 0;
+      width: 280px;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.95);
-      color: #fff;
-      padding: 20px;
+      background: rgba(0, 0, 0, 0.4);
+      color: #eaeaea;
+      padding: 24px;
       box-sizing: border-box;
-      z-index: 2000;
+      z-index: 3000;
+      border-left: 1px solid rgba(255,255,255,0.04);
+      backdrop-filter: blur(25px) brightness(0.7);
       overflow-y: auto;
-      transition: right 0.3s ease;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
-      line-height: 1.4;
-      backdrop-filter: blur(10px);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-x: hidden;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.45);
     }
     #stats-panel.active {
-      right: 0;
+      transform: translateX(0);
     }
     #stats-panel h2 {
-      margin: 0 0 20px;
-      font-size: 1.2rem;
-      color: #00ff00;
-      text-align: center;
-      border-bottom: 1px solid #333;
-      padding-bottom: 10px;
+      margin: calc(56px + env(safe-area-inset-top)) 0 12px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0;
+    }
+    #stats-panel .divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 16px 0;
+    }
+    #stats-panel p {
+      margin: 0 0 16px;
+      font-size: 1.1rem;
+      color: #cfcfcf;
+      line-height: 1.4;
     }
     .stat-group {
-      margin-bottom: 20px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 16px;
     }
     .stat-group h3 {
       margin: 0 0 10px;
-      color: #ffff00;
       font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
     }
     .stat-item {
       display: flex;
       justify-content: space-between;
-      margin: 5px 0;
-      padding: 2px 0;
+      padding: 6px 0;
+      border: none;
+      font-size: 1rem;
     }
     .stat-label {
-      color: #ccc;
-      flex: 1;
+      color: #9a9a9a;
+      font-weight: 500;
     }
     .stat-value {
-      color: #00ff88;
-      font-weight: bold;
+      color: #cfcfcf;
+      font-weight: 500;
       text-align: right;
-      flex: 1;
-    }
-    .stat-value.warning {
-      color: #ffaa00;
-    }
-    .stat-value.error {
-      color: #ff4444;
     }
     #close-stats {
       position: absolute;
-      top: 15px;
-      right: 15px;
-      background: none;
+      top: calc(12px + env(safe-area-inset-top));
+      right: 16px;
+      background: transparent;
+      border: none;
+      color: #cfcfcf;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      border-radius: 0;
+      transition: color 0.15s ease;
+      line-height: 1;
+    }
+    #close-stats:hover {
+      color: #fff;
+    }
+    #close-stats:active {
+      transform: scale(0.95);
+    }
+
+    /*----------------------------------------*/
+    /* 5) Status indicator (slides up from controls) */
+    #status-indicator {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 32px;
+      padding: 8px 16px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      pointer-events: none;
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+    #status-indicator.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #status-indicator::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cfcfcf;
+    }
+    #status-indicator.buffering::before {
+      background: #ffa500;
+      animation: pulse 1.5s infinite;
+    }
+    #status-indicator.connected::before {
+      background: #4ade80;
+    }
+    #status-indicator.error::before {
+      background: #ef4444;
+    }
+
+    /* Update notification banner */
+    #update-banner {
+      position: fixed;
+      top: calc(70px + env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: linear-gradient(135deg, #311B0B 0%, #4a2a15 100%);
+      border-radius: 12px;
+      padding: 12px 20px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      z-index: 1000;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      max-width: calc(100vw - 32px);
+      box-sizing: border-box;
+    }
+    #update-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #update-banner .update-icon {
+      font-size: 1.3rem;
+    }
+    #update-banner .update-text {
+      flex: 1;
+      line-height: 1.3;
+    }
+    #update-banner .update-version {
+      color: #4ade80;
+      font-weight: 700;
+    }
+    #update-banner .close-banner {
+      background: rgba(255, 255, 255, 0.1);
       border: none;
       color: #fff;
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 5px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      width: 30px;
-      height: 30px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 14px;
       transition: background 0.2s;
     }
-    #close-stats:hover {
-      background: rgba(255, 255, 255, 0.1);
+    #update-banner .close-banner:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
 
-    /* Buffer mode selector */
-    .buffer-selector {
-      margin: 15px 0;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
-    }
-    .buffer-option {
-      display: flex;
-      align-items: center;
-      margin: 8px 0;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .buffer-option:hover {
-      opacity: 0.8;
-    }
-    .buffer-option input {
-      margin-right: 8px;
-    }
-    .buffer-option label {
-      cursor: pointer;
-      flex: 1;
-    }
-    .buffer-desc {
-      font-size: 0.75rem;
-      color: #888;
-      margin-left: 24px;
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     /*----------------------------------------*/
@@ -314,39 +399,6 @@
       opacity: 0.9;
     }
 
-    /* Status indicator */
-    #status-indicator {
-      position: absolute;
-      top: calc(70px + env(safe-area-inset-top));
-      right: calc(16px + env(safe-area-inset-right));
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      z-index: 3;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    #status-indicator.show {
-      opacity: 1;
-    }
-    #status-indicator.buffering {
-      background: rgba(255, 165, 0, 0.8);
-      color: #000;
-    }
-    #status-indicator.error {
-      background: rgba(255, 0, 0, 0.8);
-    }
-    #status-indicator.reconnecting {
-      background: rgba(0, 150, 255, 0.8);
-    }
-    #status-indicator.connected {
-      background: rgba(0, 255, 0, 0.8);
-      color: #000;
-    }
-
     /*----------------------------------------*/
     /* 7) Bottom controls                     */
     #controls {
@@ -415,6 +467,36 @@
       cursor: pointer;
       box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
     }
+    #fullscreen-btn {
+      position: absolute;
+      top: calc(12px + env(safe-area-inset-top));
+      right: calc(16px + env(safe-area-inset-right));
+      height: 40px;
+      min-width: 40px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      outline: none;
+      pointer-events: auto;
+      user-select: none;
+      transition: background 0.15s ease, transform 0.08s ease;
+    }
+    #fullscreen-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    #fullscreen-btn:active {
+      transform: scale(0.98);
+    }
+    #fullscreen-btn svg {
+      width: 20px;
+      height: 20px;
+    }
 
     /*----------------------------------------*/
     /* 8) Portrait/mobile corrections          */
@@ -436,8 +518,12 @@
       }
       #stats-panel {
         width: 100vw;
-        right: -100vw;
+        right: 0;
         padding: 15px;
+        transform: translateX(100%);
+      }
+      #stats-panel.active {
+        transform: translateX(0);
       }
     }
 
@@ -479,76 +565,70 @@
   <!-- 2) Header -->
   <div id="header">
     <div id="logo">HaverokFM</div>
-    <button id="menu-btn" aria-label="Open menu">&#9776;</button>
-    <button id="stats-btn" aria-label="Show stats">📊</button>
-    <div id="menu-popup">
-      <h3>About</h3>
-      <p>This is an internet radio by haverok for haverok.<br>Made by Erik.</p>
-    </div>
+
+    <!-- Fullscreen button -->
+    <button id="fullscreen-btn" aria-label="Fullscreen" title="Fullscreen">
+      <svg id="fullscreen-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+      </svg>
+      <svg id="exit-fullscreen-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none">
+        <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+      </svg>
+    </button>
+
+    <!-- info (About) button -->
+    <button id="info-btn" aria-label="Show stats" title="Stats">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="currentColor">i</text>
+      </svg>
+    </button>
   </div>
 
   <!-- Settings & Stats Panel -->
   <div id="stats-panel">
-    <button id="close-stats">×</button>
-    <h2>⚙️ SETTINGS & STATS</h2>
-    
+    <button id="close-stats" aria-label="Close">×</button>
+    <h2>About</h2>
+    <p>This is an internet radio by Haverok for Haverok. Made by Erik.</p>
+
+    <div class="divider"></div>
+
+    <h2>Stats</h2>
     <div class="stat-group">
-      <h3>🎚️ Buffer Mode</h3>
-      <div class="buffer-selector">
-        <div class="buffer-option">
-          <input type="radio" id="buffer-low" name="buffer" value="low">
-          <label for="buffer-low">Low Latency (Live)</label>
-        </div>
-        <div class="buffer-desc">Minimal delay, needs good connection</div>
-        
-        <div class="buffer-option">
-          <input type="radio" id="buffer-balanced" name="buffer" value="balanced" checked>
-          <label for="buffer-balanced">Balanced (Auto)</label>
-        </div>
-        <div class="buffer-desc">Adapts to your connection</div>
-        
-        <div class="buffer-option">
-          <input type="radio" id="buffer-stable" name="buffer" value="stable">
-          <label for="buffer-stable">Stable (Buffered)</label>
-        </div>
-        <div class="buffer-desc">More delay but works on poor connections</div>
+      <div class="stat-item">
+        <span class="stat-label">Uptime</span>
+        <span class="stat-value" id="stream-uptime">0s</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Delay</span>
+        <span class="stat-value" id="stream-delay">0s</span>
       </div>
     </div>
+
+    <div class="divider"></div>
     
-    <div class="stat-group">
-      <h3>📊 Stream Stats</h3>
-      <div class="stat-item">
-        <span class="stat-label">Status:</span>
-        <span class="stat-value" id="stream-status">Stopped</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Buffer:</span>
-        <span class="stat-value" id="buffer-length">0.0s</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Position:</span>
-        <span class="stat-value" id="audio-progress">0.0s</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Volume:</span>
-        <span class="stat-value" id="volume-level">100%</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Reconnects:</span>
-        <span class="stat-value" id="reconnect-count">0</span>
-      </div>
+    <div style="text-align: center; margin-top: 20px;">
+      <div id="logo" style="position: relative; top: 0; left: 0; font-size: 1.8rem; font-weight: 600; letter-spacing: 2px; color: #fff;">HaverokFM</div>
     </div>
   </div>
 
   <!-- Status indicator -->
-  <div id="status-indicator"></div>
+  
+  <!-- Update notification banner -->
+  <div id="update-banner">
+    <span class="update-icon">🎉</span>
+    <span class="update-text">Frissült a weboldal! Az új verziót élvezhetitek: <span class="update-version">HaverokFM 2.0</span></span>
+    <button class="close-banner" aria-label="Bezárás">×</button>
+  </div>
 
   <!-- 3) Main content -->
   <div id="main-content">
     <div id="cover-card">
-      <div id="album-cover">📻</div>
+      <div id="album-cover">
+        <img src="https://via.placeholder.com/280?text=HaverokFM" alt="Album cover">
+      </div>
       <div id="details">
-        <div id="song-title"><b>Nincs duma (Csak zene)</b></div>
+        <div id="song-title">Nincs duma (Csak zene)</div>
         <div id="song-artist">HaverokFM</div>
       </div>
     </div>
@@ -566,72 +646,152 @@
       </svg>
     </button>
     <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="1">
-    <audio id="audio" preload="auto"></audio>
+    <audio id="audio" preload="none"></audio>
+    <!-- Status indicator inside controls -->
+    <div id="status-indicator"></div>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const albumCoverEl = document.getElementById('album-cover');
-      const bgBlurEl     = document.getElementById('bg-blur');
-      const songTitleEl  = document.getElementById('song-title');
-      const songArtistEl = document.getElementById('song-artist');
       const audio        = document.getElementById('audio');
       const playBtn      = document.getElementById('play-btn');
       const playIcon     = document.getElementById('play-icon');
       const pauseIcon    = document.getElementById('pause-icon');
       const volumeSlider = document.getElementById('volume-slider');
-      const menuBtn      = document.getElementById('menu-btn');
-      const menuPopup    = document.getElementById('menu-popup');
       const statusIndicator = document.getElementById('status-indicator');
-      const statsBtn     = document.getElementById('stats-btn');
+      const statsBtn     = document.getElementById('info-btn');
       const statsPanel   = document.getElementById('stats-panel');
       const closeStatsBtn = document.getElementById('close-stats');
+      const fullscreenBtn = document.getElementById('fullscreen-btn');
+      const fullscreenIcon = document.getElementById('fullscreen-icon');
+      const exitFullscreenIcon = document.getElementById('exit-fullscreen-icon');
 
+      const streamUrl = "https://erik-server.ddns.net/stream";
       const coverUrl = "https://erik-server.ddns.net/image";
       const metaUrl  = "https://erik-server.ddns.net/metadata";
-      const streamUrl = "https://erik-server.ddns.net/stream";
       
       // State
       let isPlaying = false;
-      let reconnectCount = 0;
-      let bufferMode = 'balanced';
       let reconnectTimer = null;
-      let progressCheckInterval = null;
-      let lastProgressTime = 0;
-      let stallCount = 0;
-      
-      // Metadata
       let lastSongData = { title: '', artist: '' };
       let currentCoverUrl = '';
+      let playStartTime = null;
+      let uptimeInterval = null;
+      let shouldBePlaying = false;
+      let isReconnecting = false;
 
-      // Buffer settings (in seconds)
-      const bufferSettings = {
-        low: { target: 0.5, max: 2, checkInterval: 3000 },
-        balanced: { target: 3, max: 10, checkInterval: 5000 },
-        stable: { target: 10, max: 30, checkInterval: 10000 }
-      };
+      // Update banner
+      const updateBanner = document.getElementById('update-banner');
+      const closeBannerBtn = updateBanner.querySelector('.close-banner');
+      
+      // Check if user has seen the banner (localStorage)
+      if (!localStorage.getItem('haverokfm-update-seen-2.0')) {
+        setTimeout(() => {
+          updateBanner.classList.add('show');
+        }, 1000);
+      }
+      
+      closeBannerBtn.addEventListener('click', () => {
+        updateBanner.classList.remove('show');
+        localStorage.setItem('haverokfm-update-seen-2.0', 'true');
+      });
 
       // Initialize audio
       audio.src = streamUrl;
       audio.crossOrigin = "anonymous";
       audio.volume = volumeSlider.value;
 
-      // Buffer mode handling
-      document.querySelectorAll('input[name="buffer"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-          bufferMode = e.target.value;
-          console.log('Buffer mode changed to:', bufferMode);
-          
-          // If playing, restart with new buffer settings
-          if (isPlaying) {
-            showStatus('Applying buffer settings...', 'buffering');
-            restartStream();
+      function setAlbumCover(url) {
+        if (currentCoverUrl === url) return;
+        currentCoverUrl = url;
+        
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        
+        img.onload = () => {
+          const existingImg = document.querySelector('#album-cover img');
+          if (existingImg) {
+            existingImg.src = url;
+            existingImg.classList.add('visible');
           }
-        });
-      });
+          document.getElementById('bg-blur').src = url;
+          
+          // Update Media Session with new artwork
+          updateMediaSession();
+        };
+        
+        img.onerror = () => {
+          document.getElementById('album-cover').innerHTML = '📻';
+        };
+        
+        img.src = url;
+      }
 
-      function getBufferSettings() {
-        return bufferSettings[bufferMode];
+      function updateMediaSession() {
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: lastSongData.title || 'HaverokFM',
+            artist: lastSongData.artist || 'HaverokFM',
+            album: 'HaverokFM',
+            artwork: [
+              { src: currentCoverUrl || coverUrl, sizes: '96x96', type: 'image/jpeg' },
+              { src: currentCoverUrl || coverUrl, sizes: '128x128', type: 'image/jpeg' },
+              { src: currentCoverUrl || coverUrl, sizes: '192x192', type: 'image/jpeg' },
+              { src: currentCoverUrl || coverUrl, sizes: '256x256', type: 'image/jpeg' },
+              { src: currentCoverUrl || coverUrl, sizes: '384x384', type: 'image/jpeg' },
+              { src: currentCoverUrl || coverUrl, sizes: '512x512', type: 'image/jpeg' }
+            ]
+          });
+
+          // Play/Pause controls
+          navigator.mediaSession.setActionHandler('play', () => {
+            if (audio.paused) togglePlay();
+          });
+          navigator.mediaSession.setActionHandler('pause', () => {
+            if (!audio.paused) togglePlay();
+          });
+          navigator.mediaSession.setActionHandler('stop', () => {
+            shouldBePlaying = false;
+            audio.pause();
+            isPlaying = false;
+          });
+        }
+      }
+
+      async function fetchMetadata() {
+        try {
+          const response = await fetch(metaUrl);
+          const txt = await response.text();
+          let song = "Nincs duma (Csak zene)";
+          let artist = "HaverokFM";
+
+          try {
+            const j = JSON.parse(txt);
+            if (j.artist && j.title) {
+              artist = j.artist;
+              song = j.title;
+            }
+          } catch {
+            if (txt.includes("#")) {
+              const parts = txt.split("#");
+              artist = parts[0].trim();
+              song = parts[1].trim();
+            }
+          }
+
+          if (lastSongData.title !== song || lastSongData.artist !== artist) {
+            lastSongData = { title: song, artist: artist };
+            document.getElementById('song-title').textContent = song;
+            document.getElementById('song-artist').textContent = artist;
+            setAlbumCover(coverUrl + '?t=' + Date.now());
+            updateMediaSession();
+            
+            // Update browser tab title with current song
+            document.title = `HaverokFM - ${song}`;
+          }
+        } catch (e) {
+          console.error('Metadata error:', e);
+        }
       }
 
       function showStatus(message, type = '') {
@@ -643,238 +803,58 @@
       }
 
       function updateStats() {
-        document.getElementById('stream-status').textContent = isPlaying ? 'Playing' : 'Stopped';
-        document.getElementById('volume-level').textContent = Math.round(audio.volume * 100) + '%';
-        document.getElementById('audio-progress').textContent = audio.currentTime.toFixed(1) + 's';
-        document.getElementById('reconnect-count').textContent = reconnectCount;
-        
-        if (audio.buffered.length > 0) {
-          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-          const bufferLength = bufferedEnd - audio.currentTime;
-          document.getElementById('buffer-length').textContent = bufferLength.toFixed(1) + 's';
+        // Uptime calculation
+        if (isPlaying && playStartTime) {
+          const uptime = Math.floor((Date.now() - playStartTime) / 1000);
+          const hours = Math.floor(uptime / 3600);
+          const minutes = Math.floor((uptime % 3600) / 60);
+          const seconds = uptime % 60;
           
-          // Color code buffer status
-          const bufferEl = document.getElementById('buffer-length');
-          const settings = getBufferSettings();
-          if (bufferLength < settings.target) {
-            bufferEl.className = 'stat-value warning';
-          } else if (bufferLength > settings.max) {
-            bufferEl.className = 'stat-value error';
+          if (hours > 0) {
+            document.getElementById('stream-uptime').textContent = `${hours}h ${minutes}m ${seconds}s`;
+          } else if (minutes > 0) {
+            document.getElementById('stream-uptime').textContent = `${minutes}m ${seconds}s`;
           } else {
-            bufferEl.className = 'stat-value';
+            document.getElementById('stream-uptime').textContent = `${seconds}s`;
           }
         } else {
-          document.getElementById('buffer-length').textContent = '0.0s';
+          document.getElementById('stream-uptime').textContent = '0s';
         }
-      }
 
-      function setAlbumCover(url) {
-        // Only update if URL actually changed
-        if (currentCoverUrl === url) return;
-        currentCoverUrl = url;
-        
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        
-        img.onload = () => {
-          // Clear old images
-          const existingImages = albumCoverEl.querySelectorAll('img');
-          existingImages.forEach(oldImg => {
-            oldImg.style.opacity = "0";
-            setTimeout(() => oldImg.remove(), 500);
-          });
-          
-          // Add new image
-          const newImg = img.cloneNode();
-          newImg.className = 'visible';
-          albumCoverEl.appendChild(newImg);
-          albumCoverEl.style.fontSize = '0';
-          
-          // Update background
-          bgBlurEl.src = url;
-          bgBlurEl.style.opacity = '1';
-        };
-        
-        img.onerror = () => {
-          albumCoverEl.innerHTML = '📻';
-          albumCoverEl.style.fontSize = '3rem';
-          bgBlurEl.style.opacity = '0';
-        };
-        
-        img.src = url;
-      }
-
-      async function fetchMetadata() {
-        try {
-          const response = await fetch(metaUrl);
-          const txt = await response.text();
-          let song = "Unknown";
-          let artist = "Unknown";
-
-          // Parse metadata (same logic as before)
-          try {
-            const j = JSON.parse(txt);
-            if (j.artist && j.title) {
-              artist = j.artist;
-              song = j.title;
-            } else if (j.song) {
-              const parts = j.song.split('#');
-              if (parts.length === 2) {
-                artist = parts[0];
-                song = parts[1];
-              }
-            }
-          } catch {
-            if (txt.includes("#")) {
-              const parts = txt.split("#");
-              artist = parts[0].trim();
-              song = parts[1].trim();
-            }
-          }
-
-          // Check if song changed
-          if (lastSongData.title !== song || lastSongData.artist !== artist) {
-            lastSongData = { title: song, artist: artist };
-            
-            const displaySong = song.replace(/\s*\(/g, "<br>(");
-            songTitleEl.innerHTML = `<b>${displaySong}</b>`;
-            songArtistEl.textContent = artist;
-
-            // Update cover with cache buster for new song
-            setAlbumCover(coverUrl + '?t=' + Date.now());
-
-            if ("mediaSession" in navigator) {
-              navigator.mediaSession.metadata = new MediaMetadata({
-                title: song,
-                artist: artist,
-                artwork: [{
-                  src: currentCoverUrl,
-                  sizes: '512x512',
-                  type: 'image/png'
-                }]
-              });
-            }
-          }
-        } catch (e) {
-          console.error('Metadata fetch error:', e);
-        }
-      }
-
-      function checkProgress() {
-        if (!isPlaying || audio.paused) return;
-        
-        const currentTime = audio.currentTime;
-        
-        // Check if audio is progressing
-        if (Math.abs(currentTime - lastProgressTime) < 0.1) {
-          stallCount++;
-          console.log('Audio stalled, count:', stallCount);
-          
-          // Only reconnect after multiple stalls
-          if (stallCount > 3) {
-            console.log('Multiple stalls detected, reconnecting...');
-            reconnect();
-            stallCount = 0;
-          }
+        // Delay calculation (buffer delay)
+        if (isPlaying && audio.buffered.length > 0) {
+          const delay = (audio.buffered.end(0) - audio.currentTime).toFixed(1);
+          document.getElementById('stream-delay').textContent = delay + 's';
         } else {
-          stallCount = 0;
+          document.getElementById('stream-delay').textContent = '0s';
         }
-        
-        lastProgressTime = currentTime;
-        
-        // Adjust buffer if needed
-        const settings = getBufferSettings();
-        if (audio.buffered.length > 0) {
-          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-          const bufferLength = bufferedEnd - audio.currentTime;
-          
-          // Jump forward if buffer too large (only in low latency mode)
-          if (bufferMode === 'low' && bufferLength > settings.max) {
-            audio.currentTime = bufferedEnd - settings.target;
-            console.log('Jumped to live position');
-          }
-        }
-      }
-
-      function reconnect() {
-        if (reconnectTimer) return; // Already reconnecting
-        
-        reconnectCount++;
-        showStatus('Reconnecting...', 'reconnecting');
-        
-        // Clear existing stream
-        audio.pause();
-        audio.currentTime = 0;
-        
-        // Wait a bit then try again
-        reconnectTimer = setTimeout(() => {
-          audio.load();
-          audio.play().then(() => {
-            showStatus('Reconnected!', 'connected');
-            console.log('Reconnect successful');
-          }).catch(e => {
-            console.error('Reconnect failed:', e);
-            showStatus('Connection failed', 'error');
-          });
-          reconnectTimer = null;
-        }, 2000);
-      }
-
-      function restartStream() {
-        // Stop current stream
-        if (progressCheckInterval) {
-          clearInterval(progressCheckInterval);
-        }
-        
-        audio.pause();
-        audio.currentTime = 0;
-        audio.load();
-        
-        // Start with new settings
-        const settings = getBufferSettings();
-        
-        audio.play().then(() => {
-          console.log('Stream restarted with buffer mode:', bufferMode);
-          progressCheckInterval = setInterval(checkProgress, settings.checkInterval);
-        }).catch(e => {
-          console.error('Restart failed:', e);
-        });
       }
 
       function togglePlay() {
         if (audio.paused) {
           // Start playing
-          showStatus('Starting stream...', 'buffering');
-          isPlaying = true;
-          
-          const settings = getBufferSettings();
+          shouldBePlaying = true;
+          showStatus('Connecting...', 'buffering');
           
           audio.play().then(() => {
-            console.log('Playback started');
+            isPlaying = true;
+            console.log('Stream started');
             showStatus('Connected', 'connected');
-            
-            // Start progress checking
-            if (progressCheckInterval) {
-              clearInterval(progressCheckInterval);
-            }
-            progressCheckInterval = setInterval(checkProgress, settings.checkInterval);
-            
           }).catch(e => {
             console.error('Play failed:', e);
             showStatus('Failed to start', 'error');
             isPlaying = false;
+            // Try reconnecting
+            if (shouldBePlaying) {
+              setTimeout(() => hardResetStream(), 1000);
+            }
           });
         } else {
           // Stop playing
-          isPlaying = false;
+          shouldBePlaying = false;
           audio.pause();
-          
-          if (progressCheckInterval) {
-            clearInterval(progressCheckInterval);
-            progressCheckInterval = null;
-          }
-          
-          console.log('Playback stopped');
+          isPlaying = false;
+          console.log('Stream stopped');
         }
       }
 
@@ -883,48 +863,67 @@
         playIcon.style.display = 'none';
         pauseIcon.style.display = 'block';
         isPlaying = true;
-        
-        if ("mediaSession" in navigator) {
-          navigator.mediaSession.playbackState = "playing";
-        }
+        playStartTime = Date.now();
+        updateStats();
+        updateMediaSession();
       });
 
       audio.addEventListener('pause', () => {
         playIcon.style.display = 'block';
         pauseIcon.style.display = 'none';
         isPlaying = false;
-        
-        if ("mediaSession" in navigator) {
-          navigator.mediaSession.playbackState = "paused";
+        if (shouldBePlaying) {
+          playStartTime = null;
         }
+        updateStats();
       });
 
       audio.addEventListener('error', (e) => {
-        console.error('Audio error:', e);
-        if (isPlaying) {
-          showStatus('Stream error', 'error');
-          setTimeout(() => reconnect(), 2000);
-        }
-      });
-
-      audio.addEventListener('waiting', () => {
-        if (isPlaying) {
-          showStatus('Buffering...', 'buffering');
-        }
-      });
-
-      audio.addEventListener('canplay', () => {
-        if (isPlaying) {
-          showStatus('Ready', 'connected');
+        console.error('⚠️ Audio error:', e);
+        if (shouldBePlaying && !isReconnecting) {
+          hardResetStream();
         }
       });
 
       audio.addEventListener('stalled', () => {
-        console.log('Stream stalled');
-        if (isPlaying) {
-          stallCount++;
+        console.log('⚠️ Stream beakadt (stalled)');
+        if (shouldBePlaying && !isReconnecting) {
+          hardResetStream();
         }
       });
+
+      // Waiting esemény is beakadást jelezhet
+      audio.addEventListener('waiting', () => {
+        console.log('⏳ Buffering...');
+        if (shouldBePlaying) {
+          showStatus('Buffering...', 'buffering');
+        }
+      });
+
+      function hardResetStream() {
+        if (!shouldBePlaying || isReconnecting) return;
+        
+        isReconnecting = true;
+        showStatus('Reconnecting...', 'buffering');
+        
+        // Új URL timestamp-pel
+        audio.src = streamUrl + '?t=' + Date.now();
+        audio.load();
+        
+        // Próbálkozás
+        setTimeout(() => {
+          audio.play().then(() => {
+            showStatus('Connected', 'connected');
+            isReconnecting = false;
+          }).catch(() => {
+            // Sikertelen, 1 mp múlva újra
+            isReconnecting = false;
+            if (shouldBePlaying) {
+              setTimeout(hardResetStream, 1000);
+            }
+          });
+        }, 500);
+      }
 
       // Control event listeners
       playBtn.addEventListener('click', togglePlay);
@@ -932,6 +931,27 @@
       volumeSlider.addEventListener('input', e => {
         audio.volume = parseFloat(e.target.value);
         updateStats();
+      });
+
+      // Fullscreen controls
+      fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.log('Fullscreen error:', err);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+          fullscreenIcon.style.display = 'none';
+          exitFullscreenIcon.style.display = 'block';
+        } else {
+          fullscreenIcon.style.display = 'block';
+          exitFullscreenIcon.style.display = 'none';
+        }
       });
 
       // Stats panel controls
@@ -944,78 +964,24 @@
         statsPanel.classList.remove('active');
       });
 
-      // Menu functionality
-      menuBtn.addEventListener('click', e => {
-        menuPopup.classList.toggle('active');
-        statsPanel.classList.remove('active');
-        e.stopPropagation();
-      });
-      
-      // Close popups when clicking outside
+      // Close stats panel when clicking outside
       window.addEventListener('click', (e) => {
         if (!statsPanel.contains(e.target) && !statsBtn.contains(e.target)) {
           statsPanel.classList.remove('active');
         }
-        if (!menuPopup.contains(e.target) && !menuBtn.contains(e.target)) {
-          menuPopup.classList.remove('active');
-        }
       });
       
-      menuPopup.addEventListener('click', e => e.stopPropagation());
       statsPanel.addEventListener('click', e => e.stopPropagation());
-
-      // Media Session handlers
-      if ("mediaSession" in navigator) {
-        navigator.mediaSession.setActionHandler('play', () => {
-          if (audio.paused) {
-            togglePlay();
-          }
-        });
-        
-        navigator.mediaSession.setActionHandler('pause', () => {
-          if (!audio.paused) {
-            togglePlay();
-          }
-        });
-      }
-
-      // Auto-start with user interaction fallback
-      function tryAutoStart() {
-        audio.play().then(() => {
-          console.log('Auto-play successful');
-          isPlaying = true;
-          const settings = getBufferSettings();
-          progressCheckInterval = setInterval(checkProgress, settings.checkInterval);
-        }).catch(e => {
-          console.log('Auto-play blocked, waiting for user interaction');
-          
-          // Setup one-time interaction handler
-          const startOnInteraction = () => {
-            if (!isPlaying) {
-              togglePlay();
-            }
-            document.removeEventListener('click', startOnInteraction);
-            document.removeEventListener('touchstart', startOnInteraction);
-          };
-          
-          document.addEventListener('click', startOnInteraction);
-          document.addEventListener('touchstart', startOnInteraction);
-        });
-      }
 
       // Initialize
       setAlbumCover(coverUrl);
       fetchMetadata();
       updateStats();
       
-      // Try auto-start
-      tryAutoStart();
-      
-      // Update intervals
-      setInterval(fetchMetadata, 5000); // Check metadata every 5 seconds
-      setInterval(updateStats, 1000);   // Update stats every second
+      // Update metadata every 5 seconds
+      setInterval(fetchMetadata, 5000);
+      setInterval(updateStats, 1000);
     });
   </script>
 </body>
 </html>
-
