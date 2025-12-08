@@ -74,6 +74,7 @@
       height: 56px;
       pointer-events: none;
       z-index: 2;
+      overflow: visible; /* EZ FONTOS! */
     }
     #logo {
       position: absolute;
@@ -85,6 +86,43 @@
       pointer-events: auto;
       user-select: none;
       color: #fff;
+    }
+
+    /* Duplikált info (About) gomb a fullscreen mellé */
+    #info-btn-wrapper2 {
+      position: absolute;
+      top: 0;
+      right: calc(64px + 48px + env(safe-area-inset-right));
+    }
+    #info-btn2 {
+      width: 200px;
+      position: absolute;
+      top: calc(12px + env(safe-area-inset-top));
+      right: calc(1px + env(safe-area-inset-right));
+      height: 40px;
+      min-width: 40px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      outline: none;
+      pointer-events: auto;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, transform 0.08s ease;
+    }
+    #info-btn2:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    #info-btn2:active {
+      transform: scale(0.98);
+    }
+    #info-btn2 svg {
+      width: 20px;
+      height: 20px;
     }
 
     /* info (About) button */
@@ -119,7 +157,79 @@
       height: 20px;
     }
 
-    /* Modern stats panel */
+    /* Fullscreen button */
+    #fullscreen-btn {
+      position: absolute;
+      top: calc(12px + env(safe-area-inset-top));
+      right: calc(16px + env(safe-area-inset-right));
+      height: 40px;
+      min-width: 40px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      outline: none;
+      pointer-events: auto;
+      user-select: none;
+      transition: background 0.15s ease, transform 0.08s ease;
+    }
+    #fullscreen-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    #fullscreen-btn:active {
+      transform: scale(0.98);
+    }
+    #fullscreen-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* info notification (új) */
+    #info-notification {
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #311B0B 0%, #4a2a15 100%);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 9px 18px 9px 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.13);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeIn 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
+      transition: opacity 0.3s, transform 0.3s;
+      opacity: 1;
+      pointer-events: auto;
+      user-select: none;
+      min-width: 150px;
+      white-space: nowrap;
+    }
+    #info-notification .arrow-left {
+      display: block;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-right: 14px solid #4a2a15;
+      margin-left: -12px;
+      margin-right: 0;
+      filter: drop-shadow(0 0 6px #4ade80aa);
+      animation: arrowBubblePulse 1.2s infinite alternate;
+    }
+
+    /*----------------------------------------*/
+    /* 4) Modern stats panel */
     #stats-panel {
       position: fixed;
       top: 0;
@@ -498,8 +608,70 @@
       height: 20px;
     }
 
-    /*----------------------------------------*/
-    /* 8) Portrait/mobile corrections          */
+    /* --- ÚJ: Info notification dizájn --- */
+    #info-btn-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    #info-notification {
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #311B0B 0%, #4a2a15 100%);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 9px 18px 9px 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.13);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeIn 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
+      transition: opacity 0.3s, transform 0.3s;
+      opacity: 1;
+      pointer-events: auto; /* hogy biztosan látható legyen */
+      user-select: none;
+      min-width: 150px;
+      white-space: nowrap;
+    }
+    #info-notification .arrow-left {
+      display: block;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-right: 14px solid #4a2a15;
+      margin-left: -12px;
+      margin-right: 0;
+      filter: drop-shadow(0 0 6px #4ade80aa);
+      animation: arrowBubblePulse 1.2s infinite alternate;
+    }
+    @keyframes arrowBubblePulse {
+      0% { filter: drop-shadow(0 0 6px #4ade8088); }
+      100% { filter: drop-shadow(0 0 12px #4ade80); }
+    }
+
+    /* Mobilon igazítás */
+    @media (max-width: 600px) {
+      #info-notification {
+        font-size: 0.98rem;
+        min-width: 100px;
+        padding: 7px 10px 7px 12px;
+      }
+      #info-notification .arrow-left {
+        border-top: 7px solid transparent;
+        border-bottom: 7px solid transparent;
+        border-right: 10px solid #4a2a15;
+        margin-left: -8px;
+      }
+    }
+
     @media only screen and (max-width: 600px) and (orientation: portrait) {
       #cover-card {
         flex-direction: column;
@@ -566,6 +738,11 @@
   <div id="header">
     <div id="logo">HaverokFM</div>
 
+    <!-- Duplikált info (About) gomb a fullscreen mellé -->
+    <div id="info-btn-wrapper2" style="position:absolute; top:0; right:calc(64px + 48px + env(safe-area-inset-right));">
+      <button id="info-btn2">Próbáld ki az új weboldalt &#x2794;</button>
+    </div>
+
     <!-- Fullscreen button -->
     <button id="fullscreen-btn" aria-label="Fullscreen" title="Fullscreen">
       <svg id="fullscreen-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -577,17 +754,28 @@
     </button>
 
     <!-- info (About) button -->
-    <button id="info-btn" aria-label="Show stats" title="Stats">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
-        <text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="currentColor">i</text>
-      </svg>
-    </button>
+    <div id="info-btn-wrapper">
+      <button id="info-btn" aria-label="Show stats" title="Stats">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="currentColor">i</text>
+        </svg>
+      </button>
+      <div id="info-notification">
+        Próbáld ki az <span style="color:#4ade80;">új weboldalt!</span>
+        <span class="arrow-left"></span>
+      </div>
+    </div>
   </div>
 
   <!-- Settings & Stats Panel -->
   <div id="stats-panel">
     <button id="close-stats" aria-label="Close">×</button>
+
+    <div style="margin: 24px 0 16px 0; text-align: center;">
+      <div style="font-size: 1.1em; font-weight: bold; margin-bottom: 10px;">Próbáld ki a fejlesztés alatt álló weboldalt</div>
+      <a href="https://hg-erik.github.io/haverokfm/test/" target="_blank" rel="noopener" style="display: inline-block; padding: 10px 28px; background: #4ade80; color: #222; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 1em; transition: background 0.15s;">lesgo</a>
+    </div>
     <h2>About</h2>
     <p>This is an internet radio by Haverok for Haverok. Made by Erik.</p>
 
@@ -660,6 +848,7 @@
       const volumeSlider = document.getElementById('volume-slider');
       const statusIndicator = document.getElementById('status-indicator');
       const statsBtn     = document.getElementById('info-btn');
+      const infoBtn2     = document.getElementById('info-btn2');
       const statsPanel   = document.getElementById('stats-panel');
       const closeStatsBtn = document.getElementById('close-stats');
       const fullscreenBtn = document.getElementById('fullscreen-btn');
@@ -959,6 +1148,12 @@
         statsPanel.classList.toggle('active');
         e.stopPropagation();
       });
+      if (infoBtn2) {
+        infoBtn2.addEventListener('click', e => {
+          statsPanel.classList.toggle('active');
+          e.stopPropagation();
+        });
+      }
       
       closeStatsBtn.addEventListener('click', () => {
         statsPanel.classList.remove('active');
