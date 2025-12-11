@@ -8,6 +8,11 @@ Nincs duma, csak zene.
 - stable: https://hg-erik.github.io/haverokfm/   
 - android (made by David): https://haverokfm.netlify.app/
 
+## Updates
+- Web app manifest lesgooo now you can install it as an app onto your phone
+- new reconnecting algorithm (reloads the whole audio stream instead of trying to fix it)  
+- new web design in progress, you can try it here https://hg-erik.github.io/haverokfm/test/
+
 ## About
 HaverokFM is an internet radio made from random friends' playlists. I hope you enjoy it, but there are a lot of bugs — I am working on it sometimes.
 
@@ -16,8 +21,5 @@ HaverokFM is an internet radio made from random friends' playlists. I hope you e
 - portrait/mobile support  
 - mostly stable on bad internet, like on road trips
 
-## Updates
-- new reconnecting algorithm (reloads the whole audio stream instead of trying to fix it)  
-- new web design in progress, you can try it here https://hg-erik.github.io/haverokfm/test/
 
 ## Project Structure
