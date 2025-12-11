@@ -5,8 +5,7 @@ Nincs duma, csak zene.
 
 ## Live Demo
 **Listen here:**  
-- stable: https://hg-erik.github.io/haverokfm/  
-- unstable WIP: https://hg-erik.github.io/haverokfm/test/  
+- stable: https://hg-erik.github.io/haverokfm/   
 - android (made by David): https://haverokfm.netlify.app/
 
 ## About
@@ -19,6 +18,6 @@ HaverokFM is an internet radio made from random friends' playlists. I hope you e
 
 ## Updates
 - new reconnecting algorithm (reloads the whole audio stream instead of trying to fix it)  
-- new web design and also a WIP (work in progress) version; the About section is available — feel free to try it
+- new web design in progress, you can try it here https://hg-erik.github.io/haverokfm/test/
 
 ## Project Structure
