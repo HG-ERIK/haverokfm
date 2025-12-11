@@ -5,20 +5,20 @@ Nincs duma, csak zene.
 
 ## Live Demo
 **Listen here:**  
--stable: https://hg-erik.github.io/haverokfm/
--unstable WIP: https://hg-erik.github.io/haverokfm/test/
--android (made by David): https://haverokfm.netlify.app/
+- stable: https://hg-erik.github.io/haverokfm/  
+- unstable WIP: https://hg-erik.github.io/haverokfm/test/  
+- android (made by David): https://haverokfm.netlify.app/
 
 ## About
-HaverokFM is an interned radio made by random friends playlists i hope you enjoy but there is a lot of bugs but im working on it sometimes
+HaverokFM is an internet radio made from random friends' playlists. I hope you enjoy it, but there are a lot of bugs — I am working on it sometimes.
 
 ## Features
-- it works, mostly
-- portrait, mobile support
-- mostly stable on bad internet like on roadrips
+- it works, mostly  
+- portrait/mobile support  
+- mostly stable on bad internet, like on road trips
 
 ## Updates
-- New reconnecting algorithm (reloads the whole audiostream instead of trying it to fix it)
-- New web desing and also a WIP (work in progress) version the about section feel free to try it
+- new reconnecting algorithm (reloads the whole audio stream instead of trying to fix it)  
+- new web design and also a WIP (work in progress) version; the About section is available — feel free to try it
 
 ## Project Structure
