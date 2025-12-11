@@ -5,9 +5,9 @@ Nincs duma, csak zene.
 
 ## Live Demo
 **Listen here:**  
-stable: https://hg-erik.github.io/haverokfm/
-unstable WIP: https://hg-erik.github.io/haverokfm/test/
-android (made by David): https://haverokfm.netlify.app/
+-stable: https://hg-erik.github.io/haverokfm/
+-unstable WIP: https://hg-erik.github.io/haverokfm/test/
+-android (made by David): https://haverokfm.netlify.app/
 
 ## About
 HaverokFM is an interned radio made by random friends playlists i hope you enjoy but there is a lot of bugs but im working on it sometimes
