@@ -1,7 +1,7 @@
 # HaverokFM  
 Nincs duma, csak zene.
 
-<img src="https://media.discordapp.net/attachments/1170847305902075907/1448090781318516887/haverokfmm.png?ex=693bf962&is=693aa7e2&hm=d0d2613f941f2fbfd50616b8d6026613d1a01c55f13b8467bade9a393dda4b72&=&format=webp&quality=lossless" alt="HaverokFM Banner" width="100%">
+<img src="https://hg-erik.github.io/haverokfm/files/haverokfm_banner.png&=&format=webp&quality=lossless" alt="HaverokFM Banner" width="100%">
 
 ## Live Demo
 **Listen here:**  
