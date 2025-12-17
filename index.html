@@ -12,14 +12,14 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="HaverokFM">
   <meta property="og:description" content="Mindenféle zenék a 80-as évektől teljesen mostanáig. By haverok for haverok.">
-  <meta property="og:image" content="https://media.discordapp.net/attachments/1170847305902075907/1448090781318516887/haverokfmm.png?ex=6939ff22&is=6938ada2&hm=908f91c7ba95b84f1f3e38dddce4972cd302bd88f0d79fae3ade243af3e664de&=&format=webp&quality=lossless">
+  <meta property="og:image" content="https://hg-erik.github.io/haverokfm/files/haverokfm_banner.png">
   <meta property="og:url" content="https://erik-server.ddns.net">
   
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="HaverokFM">
   <meta name="twitter:description" content="Mindenféle zenék a 80-as évektől teljesen mostanáig.">
-  <meta name="twitter:image" content="https://media.discordapp.net/attachments/1170847305902075907/1448090781318516887/haverokfmm.png?ex=6939ff22&is=6938ada2&hm=908f91c7ba95b84f1f3e38dddce4972cd302bd88f0d79fae3ade243af3e664de&=&format=webp&quality=lossless">
+  <meta name="twitter:image" content="https://hg-erik.github.io/haverokfm/files/haverokfm_banner.png">
   
   <!-- Apple -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -481,6 +481,8 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center;
+      aspect-ratio: 1 / 1;
       border-radius: 12px;
       position: absolute;
       top: 0;
@@ -840,6 +842,23 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Easter egg: 5x click on #logo changes album cover to secret image
+      const logo = document.getElementById('logo');
+      let logoClickCount = 0;
+      let logoClickTimer = null;
+      const secretImageUrl = 'https://hg-erik.github.io/haverokfm/files/secret.png';
+
+      if (logo) {
+        logo.addEventListener('click', () => {
+          logoClickCount++;
+          if (logoClickTimer) clearTimeout(logoClickTimer);
+          logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 2000);
+          if (logoClickCount === 5) {
+            setAlbumCover(secretImageUrl);
+            logoClickCount = 0;
+          }
+        });
+      }
       const audio        = document.getElementById('audio');
       const playBtn      = document.getElementById('play-btn');
       const playIcon     = document.getElementById('play-icon');
@@ -892,10 +911,9 @@
       function setAlbumCover(url) {
         if (currentCoverUrl === url) return;
         currentCoverUrl = url;
-        
+        // Only load once for both album and background
         const img = new Image();
         img.crossOrigin = "anonymous";
-        
         img.onload = () => {
           const existingImg = document.querySelector('#album-cover img');
           if (existingImg) {
@@ -903,15 +921,10 @@
             existingImg.classList.add('visible');
           }
           document.getElementById('bg-blur').src = url;
-          
-          // Update Media Session with new artwork
-          updateMediaSession();
         };
-        
         img.onerror = () => {
-          document.getElementById('album-cover').innerHTML = '📻';
+          document.getElementById('album-cover').innerHTML = 'NO COVER fasztudja miert';
         };
-        
         img.src = url;
       }
 
@@ -971,9 +984,12 @@
             lastSongData = { title: song, artist: artist };
             document.getElementById('song-title').textContent = song;
             document.getElementById('song-artist').textContent = artist;
-            setAlbumCover(coverUrl + '?t=' + Date.now());
-            updateMediaSession();
-            
+            // Wait 1 second before updating cover
+            if (window._coverTimeout) clearTimeout(window._coverTimeout);
+            window._coverTimeout = setTimeout(() => {
+              setAlbumCover(coverUrl + '?t=' + Date.now());
+              updateMediaSession();
+            }, 1000);
           }
         } catch (e) {
           console.error('Metadata error:', e);
@@ -1169,9 +1185,8 @@
       setAlbumCover(coverUrl);
       fetchMetadata();
       updateStats();
-      
-      // Update metadata every 5 seconds
-      setInterval(fetchMetadata, 5000);
+      // Update metadata every 3 seconds
+      setInterval(fetchMetadata, 3000);
       setInterval(updateStats, 1000);
     });
   </script>
